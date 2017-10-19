@@ -1,0 +1,62 @@
+###################### experimental img_format ######################
+# only if /usr/lib/x86_64-linux-gnu/lib_av.so  is provided. 
+# DEFAULT                   0  JPG
+#AV_CODEC_ID_MPEG1VIDEO     1,
+#AV_CODEC_ID_MPEG2VIDEO     2, ///< preferred ID for MPEG-1/2 video decoding
+#AV_CODEC_ID_H261           3,
+#AV_CODEC_ID_H263           4,
+#AV_CODEC_ID_MPEG4,         12
+#AV_CODEC_ID_H264,          27
+##########################################################
+{
+    I{
+        device      {/dev/video*}
+
+        fps         {30}            # not used
+        jpg_quality {80}
+        bw_image    {1}             # makes jpg B&W to save bandwidth for webcast
+        img_size    {640,480}
+        img_format  {0}             # 0 jpg
+        flip        {0}
+        max_files   {8912}          # rolls over
+        max_size    {200}           # when using lib_av
+        save_loc    {/data/snaps/}  # crate this in advance
+#       lib_av      {/usr/lib/x86_64-linux-gnu/lib_av.so} # if is not specified the mpeger is disabled (EXPERIMENTAL)
+        lib_av      {}              # is disabled (EXPERIMENTAL)
+    }
+
+    move{
+        motion      {10,600}            # changed pixels range for movement, 0,0 to disable
+        motion_diff {20}                # frame pixels change to detect motion
+        noise_div   {8}                 # lower -> higher noise, (2...32)
+        in_rect     {121,66,421,419}    # motion in detection in within img_size
+        out_rect    {3,329,190,476}     # motion reject in within img_size
+        motion_scale      {4}           # scale for motion rect from img_size (2,4,8,16) keep it 4
+        innertia          {5}           # capture after ovement another 5
+        innertia_interval {100}         # at this ms interval
+        time_lapse        {0}           # time lapse cpature. even no motion. 0 disabled
+        sig_process       {0}           # send a user sig to this pid
+        run_app           {none}        # runs this app on capture TODO
+        # disables time_lapse snaps if dark average is under pixels are < 20 (0..255)
+        dark_lapse        {20}
+        # disables motion capture snaps if dark average is under 10
+        dark_motion      {10}
+        one_shot {0}                 # runs once then exist
+    }
+
+    server{
+        port    {9000}              # locl server 0 to disable
+        mpg_multi_part {0}          #
+    }
+
+
+    webcast{
+        enabled     {1}
+        server      {"http\://localhost\:8084/camera"}
+        security    {this_string_should_match_the_server}
+        cast_fps    {50}
+        pool_intl   {6}
+        record      {0}
+        insync      {0}
+    }
+}
