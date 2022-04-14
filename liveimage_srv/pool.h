@@ -10,13 +10,13 @@
 #include "os.h"
 
 #ifdef DEBUG
-#define KILL_TIME           31
+#define KILL_TIME           16
 #else
 #define KILL_TIME           21
 #endif
 #define CHECK_CLIENTS_TOUT  11
 #define CHECK_CLIENT_COUNT  51
-#define MOTION_REC_TRAIL    10
+#define MOTION_REC_TRAIL    6
 
 
 
@@ -70,14 +70,16 @@ private:
     void _del_camera(TcpCamCli* cs);
     void _check_activity(TcpCamCli* cam,int clients_count);
     void _wipe_activity(const char*);
+    void _kill_conn(RawSock* ps, bool trw=false);
+
 private:
 
     typedef std::map<std::string,Pair*>::iterator coniterator;
     typedef std::map<std::string,Pair*>::const_iterator kconiterator;
-    CliQ&                       _q;
+    CliQ&                           _q;
     std::map<std::string,Pair*>     _pool;
     std::map<std::string,Times>     _times;
-
+    std::map<std::string,size_t>    _seqs;
     umutex                          _m;
     Sheller&                        _tm;
 };

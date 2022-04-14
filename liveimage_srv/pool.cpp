@@ -201,12 +201,12 @@ void Pool::signal_to_stop()
     {
         if(a.second->_cam!=nullptr)
         {
-            a.second->_cam->destroy();
+            _kill_conn(a.second->_cam);
         }
         const Pair* pr = a.second;
         for(const auto& css : pr->_clis)
         {
-            css->destroy();
+            _kill_conn(css);
         }
     }
     OsThread::signal_to_stop();
@@ -275,8 +275,7 @@ bool Pool::_fdCheck(fd_set& fdr,fd_set& fdw,fd_set& fdx,int ndfs)
         }
         if(FD_ISSET(a.second->_cam->socket(),&fdx))
         {
-            a.second->_cam->destroy();
-            throw RawSock::CAM;
+            _kill_conn(a.second->_cam);
             continue;
         }
         if(FD_ISSET(a.second->_cam->socket(),&fdw))
@@ -316,8 +315,7 @@ void Pool::_check_activity(TcpCamCli* cam,int clients_count)
             time_t lt = SECS() - cam->last_time();
             if(lt > MOTION_REC_TRAIL)
             {
-                cam->destroy();
-                throw cam->type();
+                _kill_conn(cam, true);
             }
         }
     }
@@ -335,6 +333,9 @@ void Pool::_checkNew(bool dirty)
     {
         //pcs->sendall("XXXX",4);
         pcs->bind(&_tm);
+        size_t seq = _seqs[pcs->name()];
+        pcs->seq(seq);
+
         Pool::Pair* pexistentCam = _has(pcs->name());     /* a camera conn */
 
         if(pexistentCam==nullptr)
@@ -388,7 +389,7 @@ AGAIN:
             for(auto& client : pr->_clis)
             {
                 _del_client(pr,client);
-                client->destroy();
+                _kill_conn(client);
                 DELETE_PTR(client);
             }
             pr->_clis.clear();
@@ -415,7 +416,7 @@ DELVCT:
                         pr->_cam->bind((TcpWebSock*)*it,false);
                     }
                     _del_client(pr,*it);
-                    (*it)->destroy();
+                    _kill_conn((*it));
                     DELETE_PTR(*it);
                     pr->_clis.erase(it);
                     GLOGD( "        DROPPING CLIENT");
@@ -473,7 +474,7 @@ void Pool::_add_cam(RawSock* pcs)
     p->_clis.clear();
     if(_pool.find(pcs->name())!=_pool.end())
     {
-        _pool[pcs->name()]->_cam->destroy();
+        _kill_conn(_pool[pcs->name()]->_cam);
         delete _pool[pcs->name()];
     }
     _pool[pcs->name()] = p;
@@ -493,7 +494,7 @@ void Pool::kill_cam(const char* cs)
         {
             Pair* pp = _pool[cs];
             pp->_cam->set_letal();
-            pp->_cam->destroy();
+            _kill_conn(pp->_cam);
         }
     }
 }
@@ -569,4 +570,12 @@ AGAIN:
             goto AGAIN;
         }
     }
+}
+
+void Pool::_kill_conn(RawSock* ps, bool trw)
+{
+    ps->destroy();
+    _seqs[ps->name()] = ps->seq();
+    if(trw)
+        throw ps->type();
 }

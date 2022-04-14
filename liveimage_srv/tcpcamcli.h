@@ -40,10 +40,8 @@ protected:
     int         _ask_frame=1;
     time_t      _lastask = 0;
     std::string _on_conhdr;
-    int         _curseq = 0;
     int         _maxseq = 8912;
     std::string _onmaxseq;
-    std::string _fpath;
 };
 
 #endif // TCPCAMCLI_H

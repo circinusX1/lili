@@ -84,6 +84,9 @@ public:
     time_t  last_time()const{return _nowt;}
     void    set_letal(){_letal=true;}
     void    bind(Sheller* p){_tm=p;}
+    void    seq(size_t seq){_seq = seq;}
+    size_t  seq()const{return _seq;}
+
 protected:
     time_t      _nowt = 0;
     std::string _mac;
@@ -93,6 +96,7 @@ protected:
     STYPE       _t;          // avoid dynamic casts
     Data        _data;
     Sheller*    _tm;
+    size_t      _seq = 0;
 };
 
 
