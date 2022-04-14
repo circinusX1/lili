@@ -80,7 +80,18 @@ http://CAM_IP:9000/?motion
 ![alt text](https://github.com/circinusX1/lili/blob/main/docs/limotion.png?raw=true "raw")
 
 
-##### Webcast mode. The server reply to liveimage to connect and stream to it. The liveimage pools the server 8 sec apart
+##### Webcast mode. 
+    * If is configured for motion & record @conf file and motion is detected it connects to server and start sending images at the rate of 'cast_fps' . 
+        * The server would record these in 'records'@ conf. 
+        * Upon  on_maxseq@conf would run the script. The provided script assembles the jpgs in a  mov file. 
+            * For that you need on the server the ffmpeg.
+    * The server link is: http:serverip:cliport/password  where the password is the configured password in config file.
+        * That would show available camera streams. Like: http:serverip:8085/?frontcam
+        * When the links is clicked the camera would detect that a user wants to look 
+            * camera checks every 'pool_intl'@liveimage.konf) seconds for a server event. (like user wants to see)
+            * Then start casting the images. 
+            * As long the user looks at the cam or a motion is detected the images are also saved.
+            
 
 ![alt text](https://github.com/circinusX1/lili/blob/main/docs/liimagremote.png?raw=true "raw")
 
