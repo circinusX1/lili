@@ -61,6 +61,8 @@ Browse the konf file and make adjustments. Create the I{'save_loc'} location and
 ####  Direct Access:
 
 ```javascript
+http://CAM_IP:9000    <-  shows the streams
+# for mpeg encoding only the stream would work. This is experimental. For now user jpg format only
 http://CAM_IP:9000/?html
 http://CAM_IP:9000/?stream
 http://CAM_IP:9000/?motion
