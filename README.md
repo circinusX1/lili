@@ -69,20 +69,20 @@ http://CAM_IP:9000/?motion
 
 ### camera as client. streams to liveimage_srv and you look at the server. No ports open in router
 
-![alt text](https://github.com/circinusX1/liveimage/blob/main/docs/lili.png?raw=true "raw")
+![alt text](https://github.com/circinusX1/lili/blob/main/docs/lili.png?raw=true "raw")
 
 ####  access modes
 
-![alt text](https://github.com/circinusX1/liveimage/blob/main/docs/limag1.png?raw=true "raw")
+![alt text](https://github.com/circinusX1/lili/blob/main/docs/limag1.png?raw=true "raw")
 
 ##### shows inclusion and exclusion rectangles and left bar motion meter.
 
-![alt text](https://github.com/circinusX1/liveimage/blob/main/docs/limotion.png?raw=true "raw")
+![alt text](https://github.com/circinusX1/lili/blob/main/docs/limotion.png?raw=true "raw")
 
 
 ##### Webcast mode. The server reply to liveimage to connect and stream to it. The liveimage pools the server 8 sec apart
 
-![alt text](https://github.com/circinusX1/liveimage/blob/main/docs/liimagremote.png?raw=true "raw")
+![alt text](https://github.com/circinusX1/lili/blob/main/docs/liimagremote.png?raw=true "raw")
 
 
 
