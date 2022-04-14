@@ -69,7 +69,7 @@ http://CAM_IP:9000/?motion
 
 ```
 
-### camera as client. streams to liveimage_srv and you look at the server. No ports open in router
+### camera on the cloud. 
 
 ![alt text](https://github.com/circinusX1/lili/blob/main/docs/lili.png?raw=true "raw")
 
