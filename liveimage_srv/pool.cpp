@@ -331,10 +331,7 @@ void Pool::_checkNew(bool dirty)
     RawSock*  pcs = _q.pop();
     if(pcs)
     {
-        //pcs->sendall("XXXX",4);
         pcs->bind(&_tm);
-        size_t seq = _seqs[pcs->name()];
-        pcs->seq(seq);
 
         Pool::Pair* pexistentCam = _has(pcs->name());     /* a camera conn */
 
@@ -478,7 +475,9 @@ void Pool::_add_cam(RawSock* pcs)
         delete _pool[pcs->name()];
     }
     _pool[pcs->name()] = p;
-
+    size_t seq = _seqs[pcs->name()];
+    GLOGD(" restarting file saving at " << seq);
+    pcs->seq(seq);
 }
 
 /**
@@ -576,6 +575,8 @@ void Pool::_kill_conn(RawSock* ps, bool trw)
 {
     ps->destroy();
     _seqs[ps->name()] = ps->seq();
+    GLOGD(" KILLING CAM CONN  file saving at " << ps->seq());
+
     if(trw)
         throw ps->type();
 }

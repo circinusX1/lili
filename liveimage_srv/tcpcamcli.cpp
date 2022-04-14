@@ -42,6 +42,20 @@ TcpCamCli::TcpCamCli(RawSock& o,
     _maxseq     = ::atoi(CFG["on_maxseq"].value(0).c_str());
     if(_maxseq == 0) _maxseq = 8912;
     _onmaxseq   = CFG["on_maxseq"].value(1);
+
+    char    fnp[256];
+    ::sprintf(fnp,"%s",__files_recs);
+    if(::access(fnp,0)!=0)
+    {
+        ::mkdir(fnp,0777);
+    }
+    ::sprintf(fnp,"%s/%s",__files_recs,_recordname.c_str());
+    if(::access(fnp,0)!=0)
+    {
+        ::mkdir(fnp,0777);
+    }
+    _fpath =fnp;
+
 }
 
 /**
@@ -170,19 +184,11 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
 
     if(!_recordname.empty() && _header.record)
     {
-        char    fn[512];
-        char    fnp[256];
         FILE*   pf;
-
+        char    fn[400];
         const uint8_t* bf = vf;
-        ::sprintf(fnp,"%s",__files_recs);
-        if(::access(fnp,0)!=0)
-        {
-            ::mkdir(fnp,0777);
-        }
-        snprintf(fn,sizeof(fn),"%s/%s-%d-%d.jpg",fnp,
-                 _recordname.c_str(),
-                 _header.event,_seq++);
+
+        snprintf(fn,sizeof(fn),"%s/%02d-%05d.jpg",_fpath.c_str(),_header.event,_seq++);
 
         pf = ::fopen(fn,"wb");
         if(pf)
@@ -194,9 +200,11 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
         {
             if(!_onmaxseq.empty())
             {
-                std::string shell =  _onmaxseq + " ";
-                shell += fnp; shell +=" ";
+                std::string shell = "/bin/bash ";
+                shell +=  _onmaxseq + " ";
+                shell += _fpath; shell +=" ";
                 shell += this->name() + " &";
+                GLOGD("executing" << shell);
                 ::system(shell.c_str());
                 //_tm->run( namex,_onmaxseq,where,namex);
             }

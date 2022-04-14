@@ -42,6 +42,7 @@ protected:
     std::string _on_conhdr;
     int         _maxseq = 8912;
     std::string _onmaxseq;
+    std::string _fpath;
 };
 
 #endif // TCPCAMCLI_H
