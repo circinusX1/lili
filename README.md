@@ -48,7 +48,7 @@ echo "Thx"
 
 ##### Camera as server 
 
-###### create a folder /data/snaps
+Browse the konf file and make adjustments. Create the I{'save_loc'} location and give RW access for the user that runs liveimage
 
 ###### Tested on
 
