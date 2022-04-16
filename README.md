@@ -29,7 +29,7 @@ Captures images when senses motion, or at certain interval based on settings.
 sudo adduser $USER video
 sudo apt-get install git
 sudo apt install cmake build-essential
-git clone https://github.com/circinusX1/liveimage
+git clone https://github.com/circinusX1/lili
 sudo apt-get install libv4l-dev
 sudo apt install libjpeg-dev
 sudo apt-get install libavcodec-dev libavformat-dev # (optional with code changes)
