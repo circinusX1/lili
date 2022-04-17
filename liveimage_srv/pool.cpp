@@ -100,46 +100,42 @@ std::string Pool::get_cams(const std::string& host,bool webreq)const
 {
     AutoLock a(&_m);
 
-    std::string ret = "<!DOCTYPE html>\r\n<html lang='en'>\r\n";
+    std::string hret = "<!DOCTYPE html>\r\n<html lang='en'>\r\n";
+    hret += "<head><meta http-equiv='refresh' content='5'></head>\r\n";
+    hret += "<h2>STREAMS</h2><br>\r\n";
 
-    ret += "<head><meta http-equiv='refresh' content='5'></head>\r\n";
-    ret += "<h2>STREAMS</h2><br>\r\n";
+    std::map<std::string, std::string>  lis;
 
-    if(_pool.size())
-    {
-        ret+="";
-        for(const auto& a : _pool)
-        {
-            const TcpCamCli* pc = a.second->_cam;
-            ret += "<li><a href='http://";
-            ret+=host;
-            ret+="/";
-            ret+="?";
-            ret+=pc->name();
-            ret+="'>Camera: ";
-            ret+=pc->name();
-            ret+=" streaming</a>";
-            ret+="\r\n";
-        }
-    }
         if(_times.size())
         {
-
             for(const auto& a : _times)
             {
-                ret += "<li><a href='http://";
+                std::string ret = "<li> Camera: <a href='http://";
                 ret+=host;
                 ret+="?";
                 ret+=a.first;
                 ret+="'><b>";
-                ret+=" Camera: <i>"; ret+=a.first; ret += "</i> active";
+                ret+="<i>"; ret+=a.first; ret += "</i> is active ";
                 ret+="</b></a>";
-                ret+="\r\n";
+                lis[a.first] = ret;
             }
         }
 
-    ret+="</html>\r\n";
-    return ret;
+    if(_pool.size())
+    {
+        for(const auto& a : _pool)
+        {
+            const TcpCamCli* pc = a.second->_cam;
+            lis[pc->name()] += " and is streaming.\r\n";
+        }
+    }
+    for(const auto& a: lis){
+        hret += a.second;
+    }
+
+
+    hret+="</html>\r\n";
+    return hret;
 }
 
 /**
