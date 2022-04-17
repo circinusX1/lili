@@ -12,7 +12,7 @@ public:
     TcpWebSock(RawSock&,const LiFrmHdr& h,STYPE t=RawSock::CLIENT);
     virtual ~TcpWebSock();
 
-    virtual int snd(const uint8_t* b,size_t room,uint32_t extra,const char* oth);
+    virtual int snd(const uint8_t* b,size_t room,uint32_t extra);
     virtual bool destroy(bool be=true);
 
 protected:

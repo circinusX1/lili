@@ -353,7 +353,7 @@ bool    TcpSrv::_show_streams(RawSock& s,
     if(!host.empty())
         channels = _p.get_cams(host, true);
     _htmlhdr(s,re,channels.length());
-    s.snd((const uint8_t*)channels.c_str(),channels.length(),0,nullptr);
+    s.snd((const uint8_t*)channels.c_str(),channels.length(),0);
     return true;
 }
 

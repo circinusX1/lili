@@ -32,22 +32,9 @@ TcpWebSock::~TcpWebSock()
  * @param extra
  * @return
  */
-int TcpWebSock::snd(const uint8_t* b,size_t room,uint32_t extra,
-                 const char* oth)
+int TcpWebSock::snd(const uint8_t* b,size_t room,uint32_t extra)
 {
-    int sent = 1;
-
-    _nowt = SECS();
-    if(!_headered && oth && *oth){
-        sent = RawSock::snd((const uint8_t*)oth,::strlen(oth),0,nullptr);
-        _headered=true;
-    }
-    if(sent){
-        return RawSock::snd(b,room,extra,nullptr);
-    }
-    this->destroy();
-    throw _t;
-    return 0;
+    return RawSock::snd(b,room,extra);
 }
 
 /**

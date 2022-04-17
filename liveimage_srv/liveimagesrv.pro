@@ -55,5 +55,7 @@ HEADERS += \
 
 DISTFILES += \
     liveimage_srv.conf \
+    liveimage_srv.conf \
+    liveimage_srv.conf_example \
     mk_video.sh
 

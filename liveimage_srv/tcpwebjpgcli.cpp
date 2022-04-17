@@ -27,6 +27,40 @@ CliJpegSock::CliJpegSock(RawSock& o,
     GLOGD(__FUNCTION__);
     _headered=false;
     _t = CLIJPEG;
+
+    FILE* pf = fopen("./def.jpg","rb");
+    if(pf)
+    {
+        char    buffer[512]= {0};
+        struct timeval timestamp;
+        struct timezone tz = {5,0};
+
+        ::fseek(pf,SEEK_END,0);
+        long rec_off = ::ftell(pf);
+        ::fseek(pf,SEEK_SET,0);
+
+        gettimeofday(&timestamp,&tz);
+
+        TcpWebSock::snd((const uint8_t*)JpegPartHeader,
+                     strlen(JpegPartHeader),0);
+        size_t hl = ::sprintf(buffer,JpegHdr,
+                                        (int)rec_off,
+                                        (int)timestamp.tv_sec,
+                                        (int)timestamp.tv_usec);
+
+        TcpWebSock::snd((const uint8_t*)buffer,hl,0);
+        while(!feof(pf))
+        {
+            int sz = ::fread(buffer, 1, 512, pf);
+            if(sz)
+                 TcpWebSock::snd((const uint8_t*)buffer,sz,0);
+            if(feof(pf))
+                break;
+        }
+        TcpWebSock::snd((const uint8_t*)JpegPart,strlen(JpegPart),0);
+        _headered = true;
+    }
+
 }
 
 /**
@@ -43,7 +77,7 @@ CliJpegSock::~CliJpegSock()
  * @param rec_off
  * @return
  */
-int CliJpegSock::snd(const uint8_t* b,size_t rec_off,uint32_t extra,const char* hdr)
+int CliJpegSock::snd(const uint8_t* b,size_t rec_off,uint32_t extra)
 {
     char    buffer[512] = {0};
     struct timeval timestamp;
@@ -55,7 +89,7 @@ int CliJpegSock::snd(const uint8_t* b,size_t rec_off,uint32_t extra,const char* 
     {
         // one time header when browserc onnatecs the <image src''> tag
         TcpWebSock::snd((const uint8_t*)JpegPartHeader,
-                     strlen(JpegPartHeader),0,nullptr);
+                     strlen(JpegPartHeader),0);
         _headered=true;
     }
     //every frame header
@@ -64,9 +98,9 @@ int CliJpegSock::snd(const uint8_t* b,size_t rec_off,uint32_t extra,const char* 
                                     (int)timestamp.tv_sec,
                                     (int)timestamp.tv_usec);
 
-    TcpWebSock::snd((const uint8_t*)buffer,hl,0,nullptr);
-    TcpWebSock::snd(b,rec_off,0,nullptr);
-    TcpWebSock::snd((const uint8_t*)JpegPart,strlen(JpegPart),0,nullptr);
+    TcpWebSock::snd((const uint8_t*)buffer,hl,0);
+    TcpWebSock::snd(b,rec_off,0);
+    TcpWebSock::snd((const uint8_t*)JpegPart,strlen(JpegPart),0);
     return 1;
 }
 

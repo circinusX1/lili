@@ -56,6 +56,7 @@ static void Sigs()
     sigemptyset(&mask);
     sigaddset(&mask,SIGINT);
     sigaddset(&mask,SIGPIPE);
+    pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
 }
 
 static void loop_callback();

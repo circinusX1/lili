@@ -43,13 +43,13 @@ TcpCamCli::TcpCamCli(RawSock& o,
     if(_maxseq == 0) _maxseq = 8912;
     _onmaxseq   = CFG["on_maxseq"].value(1);
 
-    char    fnp[256];
+    char    fnp[460];
     ::sprintf(fnp,"%s",__files_recs);
     if(::access(fnp,0)!=0)
     {
         ::mkdir(fnp,0777);
     }
-    ::sprintf(fnp,"%s/%s",__files_recs,_recordname.c_str());
+    ::snprintf(fnp,sizeof(fnp)-1,"%s/%s",__files_recs,_recordname.c_str());
     if(::access(fnp,0)!=0)
     {
         ::mkdir(fnp,0777);
@@ -128,7 +128,7 @@ void TcpCamCli::can_send(bool force)
    if((_header.insync && tick_count()-_lastask>10000) || _ask_frame)
    {
         _header.mac = 888;
-        this->snd((const uint8_t*)&_header,sizeof(_header),0,nullptr);
+        this->snd((const uint8_t*)&_header,sizeof(_header),0);
         _ask_frame = 0;
         _lastask = tick_count();
     }
@@ -173,7 +173,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
         for(const auto& cs : _pclis)
         {
             if(cs->isopen()){
-                cs->snd(vf,rec_off,_rtpseq,this->_on_conhdr.c_str());
+                cs->snd(vf,rec_off,_rtpseq);
             }
         }
     }
@@ -188,7 +188,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
         char    fn[400];
         const uint8_t* bf = vf;
 
-        snprintf(fn,sizeof(fn),"%s/%02d-%05d.jpg",_fpath.c_str(),_header.event,_seq++);
+        snprintf(fn,sizeof(fn),"%s/%02d-%05zu.jpg",_fpath.c_str(),_header.event,_seq++);
 
         pf = ::fopen(fn,"wb");
         if(pf)
@@ -196,7 +196,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
             ::fwrite(bf,1,rec_off, pf);
             ::fclose(pf);
         }
-        if(_seq > _maxseq)
+        if((int)_seq > (int)_maxseq)
         {
             if(!_onmaxseq.empty())
             {

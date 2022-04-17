@@ -11,7 +11,7 @@ class CliJpegSock : public TcpWebSock
 public:
     CliJpegSock(RawSock&,const LiFrmHdr& h);
     virtual ~CliJpegSock();
-    virtual int snd(const uint8_t* b,size_t room,uint32_t extra,const char*);
+    virtual int snd(const uint8_t* b,size_t room,uint32_t extra);
 
 private:
 

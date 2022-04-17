@@ -473,7 +473,7 @@ void Pool::_add_cam(RawSock* pcs)
     }
     _pool[pcs->name()] = p;
     size_t seq = _seqs[pcs->name()];
-    GLOGD(" restarting file saving at " << seq);
+    GLOGD(" reindexing file saving at " << seq);
     pcs->seq(seq);
 }
 

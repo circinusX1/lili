@@ -82,7 +82,7 @@ void RawSock::can_send(bool force)
  * @return
  */
 int RawSock::snd(const uint8_t* b,size_t room,
-                  uint32_t extra,const char* oth)
+                  uint32_t extra)
 {
     int rb = this->sendall(b,room);
     if((size_t)rb!=room){
@@ -123,7 +123,7 @@ int RawSock::transfer(const std::vector<RawSock*>& clis)
     {
         for(const auto& css : clis)
         {
-            css->snd(_data.buff,_data.rec_off,0,nullptr);
+            css->snd(_data.buff,_data.rec_off,0);
         }
     }
     _data.reset();

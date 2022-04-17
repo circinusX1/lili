@@ -74,7 +74,7 @@ public:
     virtual bool isopen();
     virtual bool destroy(bool be=true);
     virtual int  recdata(uint8_t* buff,size_t rec_off);
-    virtual int  snd(const uint8_t* b,size_t room,uint32_t extra,const char* oth);
+    virtual int  snd(const uint8_t* b,size_t room,uint32_t extra);
     virtual int    transfer(const std::vector<RawSock*>& clis);
     virtual int recdata();
     virtual void   can_send(bool force=false);
