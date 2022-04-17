@@ -427,7 +427,7 @@ int     tcp_sock::sendall(const unsigned char* buff, int length, int tout)
     if(tout==0)tout=9000;
     while(length > 0 &&  tout-->0)
     {
-        shot = ::send(_thesock,(char *)buff+sent, length, 0);
+        shot = ::send(_thesock,(char *)buff+sent, length,  MSG_NOSIGNAL);
         if(shot==-1){
             _error = errno;
             break;

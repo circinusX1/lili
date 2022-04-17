@@ -109,12 +109,15 @@ static void calc_room(const std::string& save_loc, int& curentfile,
 
 int main(int nargs, char* vargs[])
 {
-    signal(SIGINT,  ControlC);
     signal(SIGABRT, ControlC);
     signal(SIGKILL, ControlC);
     signal(SIGUSR2, Capture);
-    signal(SIGTRAP, SIG_IGN);
-    signal(SIGPIPE, SIG_IGN);
+
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask,SIGINT);
+    sigaddset(&mask,SIGPIPE);
+    pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
 
     (void)nargs;
     (void)vargs;
@@ -273,7 +276,7 @@ void capture(outstrmfmt* ffmt, sockserver* ps, v4ldevice& dev,
         cast->start_thread();
     }
 
-    while(__alive && 0 == ::usleep(15000))
+    while(__alive && 0 == ::usleep(10000))
     {
         if(ps)
             ps->spin();
