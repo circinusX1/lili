@@ -66,6 +66,7 @@ void WebCast::thread_main()
     char            path[64];
     char            url[256];
 
+    //signal(SIGPIPE, SIG_IGN);
     ::strcpy(url, CFG["webcast"]["server"].value().c_str());
     parseURL(url, scheme,
              sizeof(scheme), host, sizeof(host),
@@ -92,7 +93,7 @@ void WebCast::kill()
     by=_s.sendall((const uint8_t*)data_, (int)dlen_);          \
     if(by!=(int)dlen_)                                               \
 {                                                           \
-    std::cout << "SEND ERROR << "<< by <<" bytes sent\r\n"; \
+    std::cout << "SEND ERROR << "<< by <<" bytes sent, errno:"<< errno <<"\r\n"; \
     goto DONE;                                              \
     }
 
@@ -106,6 +107,10 @@ void WebCast::_go_streaming(const char* host, const char* camname, int port)
     _s.destroy();
     if(_s.create(port))
     {
+        int set = 1;
+//        ::setsockopt(_s.sock(), 
+//		     SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+
         _s.set_blocking(1);
         if(_s.try_connect(host, port)){
             std::cout << "cam connected "<<host<< port<<"\r\n";
