@@ -116,14 +116,12 @@ std::string Pool::get_cams(const std::string& host,bool webreq)const
             ret+="/";
             ret+="?";
             ret+=pc->name();
-            ret+="'>";
+            ret+="'>Camera: ";
             ret+=pc->name();
-            ret+="</a>";
+            ret+=" streaming</a>";
             ret+="\r\n";
         }
     }
-    else
-    {
         if(_times.size())
         {
 
@@ -134,12 +132,11 @@ std::string Pool::get_cams(const std::string& host,bool webreq)const
                 ret+="?";
                 ret+=a.first;
                 ret+="'><b>";
-                ret+=a.first+" waiting for stream...";
+                ret+=" Camera: <i>"; ret+=a.first; ret += "</i> active";
                 ret+="</b></a>";
                 ret+="\r\n";
             }
         }
-    }
 
     ret+="</html>\r\n";
     return ret;
