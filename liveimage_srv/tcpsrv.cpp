@@ -42,6 +42,16 @@ extern Encryptor*   pENC;
  */
 TcpSrv::TcpSrv(Pool& p, CliQ& q,Sheller* tm):_p(p),_q(q),_ptm(tm)
 {
+    size_t filters =  CFG["record_on"].count();
+    for(size_t i=0; i<filters; i++){
+        const std::string& entry  = CFG["record_on"].value(i);
+        _filter.predicate = CMD_RECORD;
+        if(entry=="motion")          _filter.predicate |= EVT_MOTION;
+        else if(entry=="signal")     _filter.predicate |= EVT_SIGNAL;
+        else if(entry=="timelapse")  _filter.predicate |= EVT_TLAPSE;
+        else if(entry=="force")      _filter.predicate |= EVT_FORCE;
+    }
+    // record_on   {motion,signal,timelapse,force}
 }
 
 /**
@@ -238,7 +248,7 @@ bool    TcpSrv::_on_cam()
             if(_p.client_was_here(std::string(hdr.camname))==false)
             {
                 _p.record_cam(hdr.camname);
-                if(!(hdr.event.predicate & EVT_FORCE))
+                if((_filter.predicate & hdr.event.predicate) == 0)
                 {
                     GLOGW("CAM:" << hdr.camname <<  ", no client was here, no recors required ");
                     throw RawSock::CAM;
