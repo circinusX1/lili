@@ -68,7 +68,6 @@ private:
     time_t          _zoomah = 0;
     int8_t          _fatals = 3;
     int             _cport=0;
-    event_t         _filter = {0,0};
 };
 
 #endif // TCPSRV_H

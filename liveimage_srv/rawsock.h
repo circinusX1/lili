@@ -18,12 +18,14 @@ struct  event_t {
     uint16_t    movepix:12;
 }PACK_ALIGN_1;
 
+#define EVT_KEEP_ALIVE  0x80
 #define CMD_RECORD      0x1
 #define CMD_SAVLOC      0x2
-#define EVT_MOTION      0x4
-#define EVT_TLAPSE      0x8
-#define EVT_SIGNAL      0x10
-#define EVT_FORCE       0x20
+#define EVT_MOTION      (0x4|EVT_KEEP_ALIVE)
+#define EVT_TLAPSE      (0x8|EVT_KEEP_ALIVE)
+#define EVT_SIGNAL      (0x10|EVT_KEEP_ALIVE)
+#define EVT_FORCE       (0x20|EVT_KEEP_ALIVE)
+
 
 struct  LiFrmHdr{
     uint32_t    len;

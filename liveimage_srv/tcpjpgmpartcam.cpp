@@ -32,6 +32,7 @@ int  TcpJpgMpartCam::transfer(const std::vector<RawSock*>& clis)
     throw CAM;
     return 0;
 */
+    int clients = 0;
     int antilock = 32;
     int bytes = this->recdata();
     while(bytes>0 && antilock--)
@@ -45,7 +46,7 @@ int  TcpJpgMpartCam::transfer(const std::vector<RawSock*>& clis)
             if(ph->magic==JPEG_MAGIC){
                 _header.event = ph->event;
                 _data.vfl = ph->len;
-                if(ph->event.predicate){
+                if(ph->event.predicate & EVT_KEEP_ALIVE){
                     _nowt = SECS();
                 }
                 _data.advance_prc(sizeof(LiFrmHdr));
@@ -62,7 +63,7 @@ int  TcpJpgMpartCam::transfer(const std::vector<RawSock*>& clis)
         {
             if(bytes >= (int)_data.vfl)
             {
-                 _deliverChunk(_data.prc_ptr(),_data.vfl);
+                 clients = _deliverChunk(_data.prc_ptr(),_data.vfl);
                  _data.outbytes += _data.vfl + sizeof(LiFrmHdr);
                  _data.advance_prc(_data.vfl);
                  bytes -= _data.vfl;
@@ -98,6 +99,9 @@ EXIT_:
     if(_header.insync){
         can_send(true);
         _ask_frame = 1;
+    }
+    if(clients){
+        _nowt = SECS();
     }
     return bytes;
 }

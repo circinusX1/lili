@@ -79,7 +79,7 @@ void webcast::thread_main()
 
     while(!this->osthread::is_stopped() && __alive)
     {
-        if((time(0)-ctime > _pool_intl || _hdr.len))
+        if((time(0)-ctime > _pool_intl || (_hdr.len && _hdr.event.predicate & EVT_KKEP_ALIVE)))
         {
             _go_streaming(host, port);
             ctime = time(0);
