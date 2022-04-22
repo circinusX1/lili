@@ -36,9 +36,13 @@ public:
 
     unsigned int  decrypt(const uint8_t* text)
     {
-        char    loco[16] = {0};
+        char    loco[32] = {0};
         uint8_t len = text[0];
         const uint8_t* pc = text+1;
+        if(len>16){
+            return 0;
+        }
+
         for(int i=0; i<len; i++)
         {
             loco[i] = pc[i] - _key[i%_key.length()];

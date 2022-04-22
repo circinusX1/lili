@@ -188,7 +188,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
         char    fn[400];
         const uint8_t* bf = vf;
 
-        snprintf(fn,sizeof(fn),"%s/%02d-%05zu.jpg",_fpath.c_str(),_header.event,_seq++);
+        snprintf(fn,sizeof(fn),"%s/%02d-%05zu.jpg",_fpath.c_str(),_header.event.movepix,_seq++);
 
         pf = ::fopen(fn,"wb");
         if(pf)
