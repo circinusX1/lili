@@ -239,14 +239,15 @@ bool    TcpSrv::_on_cam()
             {
                 _p.record_cam(hdr.camname);
                 if(hdr.record == false){
-                    GLOGW("no client, no recors required");
+                    GLOGW("CAM:" << hdr.camname <<  ", no client was here, no recors required ");
                     throw RawSock::CAM;
                 }
                 if(hdr.record == true && hdr.event==0){
-                    GLOGW("CAM: no client was here, recors required but no movement");
+                    GLOGW("CAM:" << hdr.camname <<  ", no client was here, recors required but no movement");
                     throw RawSock::CAM;
                 }
             }
+            GLOGW("camera  "<<hdr.camname<<" accepted");
 
             RawSock* pcam = nullptr;
             if(hdr.format==0)

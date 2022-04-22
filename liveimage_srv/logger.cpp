@@ -41,9 +41,8 @@ void fileit(std::stringstream& ss,bool fatal)
         std::cout << "\r\n";
         return;
     }
-#ifdef DEBUG
-    std::cerr << ss.str().c_str();
-#endif
+    if( Debug & 0x10)
+        std::cout << ss.str().c_str();
     ::fwrite(ss.str().c_str(),sizeof(char),ss.str().length(),log);
     if(OnceIn100%100==0)
     {
