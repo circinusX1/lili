@@ -2,60 +2,81 @@
 #include "cbconf.h"
 #include "sockserver.h"
 #include "strutils.h"
-
+#include "lilitypes.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 #define EXTRA_SPACE 2048
 extern bool __alive;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-WebCast::WebCast(int ifmt)
+webcast::webcast(const std::string& name):imgsink(name)
 {
+    ::memset(&_hdr,0,sizeof(_hdr));
     _hdr.magic   = JPEG_MAGIC;
+    _filter.predicate = 0;
 
-    _hdr.record  = CFG["webcast"]["record"].to_int();
-    _hdr.format  = (ifmt);
+    size_t cmds = CFG["webcast"]["record"].count();
+    for(size_t c = 0; c < cmds; c++)
+    {
+        const std::string& cfg = CFG["webcast"]["record"].value(c);
+        if(cfg=="motion")
+            _filter.predicate |= EVT_MOTION;
+        if(cfg=="timelapse")
+            _filter.predicate |= EVT_TLAPSE;
+        if(cfg=="signal")
+            _filter.predicate |= EVT_SIGNAL;
+        if(cfg=="force")
+            _filter.predicate |= EVT_FORCE;
+
+    }
     _hdr.insync  = CFG["webcast"]["insync"].to_int();
-
     _cast_fps    = CFG["webcast"]["cast_fps"].to_int();
     _pool_intl   = CFG["webcast"]["pool_intl"].to_int();
 
     if(_pool_intl<6)_pool_intl=10;
-    if(_cast_fps>60) _cast_fps=60;
+    if(_cast_fps>30) _cast_fps=30;
     else if(_cast_fps<1)_cast_fps=1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-WebCast::~WebCast()
+webcast::~webcast()
 {
+    this->signal_to_stop();
+    ::usleep(0xFFFF);
     this->stop_thread();
+    delete[] _frame;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-void WebCast::stream_frame(uint8_t* pjpg, size_t length, int event, int w, int h)
+void webcast::stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
+                     const std::string& name, const event_t& event, EIMG_FMT eift)
 {
-    AutoLock a(&_mut);
+    if(_filter.predicate & EVT_FORCE || _filter.predicate & event.predicate)
+    {
+        AutoLock a(&_mut);
 
-    if(_frame==nullptr){
-        _frame = new uint8_t[length + EXTRA_SPACE];
-        std::cout << "new " << length << "\n";
-        _buffsz = length + EXTRA_SPACE;
+        if(_frame==nullptr){
+            _frame = new uint8_t[len + EXTRA_SPACE];
+            _buffsz = len + EXTRA_SPACE;
+        }
+        if(len > _buffsz){
+            delete[] _frame;
+            _frame = new uint8_t[len + EXTRA_SPACE];
+            TRACE() << "renew " << len << "\n";
+            _buffsz = len + EXTRA_SPACE;
+        }
+        ::memcpy(_frame, pb, len);
+        _hdr.wh[0]   = imgsz.x;
+        _hdr.wh[1]   = imgsz.y;
+        _hdr.len     = len;
+        _hdr.event   = event;
+        _hdr.format  = eift;
+        ::strncpy(_hdr.camname,name.c_str(),sizeof(_hdr.camname));
     }
-    if(length > _buffsz){
-        delete[] _frame;
-        _frame = new uint8_t[length + EXTRA_SPACE];
-        std::cout << "renew " << length << "\n";
-        _buffsz = length + EXTRA_SPACE;
-    }
-    ::memcpy(_frame, pjpg, length);
-    _hdr.wh[0]   = w;
-    _hdr.wh[1]   = h;
-    _hdr.len     = length;
-    _hdr.event = event;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-void WebCast::thread_main()
+void webcast::thread_main()
 {
     time_t          ctime = 0;
     tcp_cli_sock    cli;
@@ -72,32 +93,34 @@ void WebCast::thread_main()
              sizeof(scheme), host, sizeof(host),
              &port, path, sizeof(path));
 
-    while(!this->OsThread::is_stopped() && __alive)
+    ::strcat(url,_name.c_str());
+
+    while(!this->osthread::is_stopped() && __alive)
     {
-        if((time(0)-ctime > _pool_intl && _hdr.len) ||
-                (_hdr.event>0 && _hdr.record) || uconnect)
+        if((time(0)-ctime > _pool_intl && _hdr.len) || uconnect)
         {
-            _go_streaming(host, path+1, port);
+            _go_streaming(host, port);
             ctime = time(0);
         }
         msleep(0xFF);
     }
 }
 
-void WebCast::kill()
+void webcast::kill()
 {
     _s.destroy();
 }
 
-#define CHECK_SEND(data_, dlen_)                                \
-    by=_s.sendall((const uint8_t*)data_, (int)dlen_);          \
-    if(by!=(int)dlen_)                                               \
-{                                                           \
-    std::cout << "SEND ERROR << "<< by <<" bytes sent, errno:"<< errno <<"\r\n"; \
-    goto DONE;                                              \
+//////////////////////////////////////////////////////////////////////////////////////////////////
+#define CHECK_SEND(data_, dlen_)                                                    \
+    by=_s.sendall((const uint8_t*)data_, (int)dlen_);                               \
+    if(by!=(int)dlen_)                                                              \
+{                                                                                   \
+    TRACE() << "SEND ERROR << "<< by <<" bytes sent, errno:"<< errno <<"\r\n";    \
+    goto DONE;                                                                      \
     }
 
-void WebCast::_go_streaming(const char* host, const char* camname, int port)
+void webcast::_go_streaming(const char* host, int port)
 {
     int             by;
     int             frm_intl = 1000 / (1+_cast_fps);
@@ -107,26 +130,22 @@ void WebCast::_go_streaming(const char* host, const char* camname, int port)
     _s.destroy();
     if(_s.create(port))
     {
-        int set = 1;
-//        ::setsockopt(_s.sock(), 
-//		     SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
-
         _s.set_blocking(1);
         if(_s.try_connect(host, port)){
-            std::cout << "cam connected "<<host<< port<<"\r\n";
+            TRACE() << "cam connected "<< host << port <<"\r\n";
         }
         else{
-            std::cout << "cam cannot connect "<<host<< port<<"\r\n";
+            TRACE() << "cam cannot connect "<< host << port <<"\r\n";
             goto DONE;
         }
         if(_s.isopen())
         {
             //////////////////////////////////// connect
-            std::cout << "cam stream really connected \r\n";
-            ::strncpy(_hdr.camname, camname, sizeof(_hdr.camname));
+            TRACE() << "cam stream really connected \r\n";
+
             do{
                 AutoLock a(&_mut);
-                std::cout << "init conn with event " << _hdr.event << "\r\n";
+                TRACE() << "init conn with event " << _hdr.event.movepix << "\r\n";
                 jhdr = _hdr;
             }while(0);
 
@@ -134,7 +153,7 @@ void WebCast::_go_streaming(const char* host, const char* camname, int port)
             jhdr.len = 0;
             jhdr.random = rand();
             _enc.encrypt(jhdr.random, jhdr.challange);
-            int g = _enc.decrypt(jhdr.challange);
+            //int g = _enc.decrypt(jhdr.challange);
             CHECK_SEND(&jhdr, sizeof(jhdr));
 
             msleep(1000);
@@ -144,11 +163,11 @@ void WebCast::_go_streaming(const char* host, const char* camname, int port)
                 if(_hdr.insync)
                 {
                     needsframe = false;
-                    std::cout << "WAITING \r\n" ;
+                    TRACE() << "WAITING \r\n" ;
                     _s.set_blocking(1);
                     by = _s.receiveall((uint8_t*)&jhdr, sizeof(jhdr));
                     if(by!=sizeof(jhdr)){
-                        std::cout << "REC ERROR " << by <<", "<< _s.error() << "\n";
+                        TRACE() << "REC ERROR " << by <<", "<< _s.error() << "\n";
                         goto DONE;
                     }
                     if(jhdr.len==0){
@@ -168,7 +187,7 @@ void WebCast::_go_streaming(const char* host, const char* camname, int port)
                         ///////////////////////////////////////////////  frame
                         CHECK_SEND(_frame, _hdr.len)
                     }
-                    std::cout << "sent " << _hdr.len << "\n" ;
+                    TRACE() << "sent " << _hdr.len << "\n" ;
                 }while(0);
 END_WILE:
                 msleep(1+frm_intl);
@@ -179,6 +198,15 @@ DONE:
     AutoLock a(&_mut);
     _hdr.len  = 0;
     _s.destroy();
-    std::cout << "socked close\r\n";
+    TRACE() << "socked close\r\n";
 }
 
+bool webcast::spin(event_t&)
+{
+    return true;
+}
+
+bool webcast::init(const dims_t&)
+{
+    return start_thread()==0;
+}

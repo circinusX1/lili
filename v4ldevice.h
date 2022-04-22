@@ -51,7 +51,7 @@
 struct videobuffer {
     void *  start;
     size_t  length;
-    int      mmap;
+    int     mmap;
 };
 
 
@@ -59,17 +59,14 @@ class v4ldevice
 {
 public:
 
-    v4ldevice(const char* device, int x, int y, int fps,
-              int motionlow, int motionhi, int nr=4);
+    v4ldevice(const char* device, int x, int y);
     virtual ~v4ldevice();
 
     bool open();
     void close();
     const uint8_t* read(int& w, int& h, int& sz, bool& fatal); // ret 0 fatal, 1 aquired, -1 continue
     const uint8_t* getm(int& w, int& h, int& sz); // ret 0 fatal, 1 aquired, -1 continue
-    int _proc_buff(const void* p, struct timeval& t);
-    int movement()const{return _moved;}
-    int darkaverage()const{return _pmt ? _pmt->darkav() : 255;}
+
 private:
     int _ioctl(int request, void* argp);
 
@@ -82,13 +79,7 @@ private:
     timeval   _curts;
     uint32_t  _buffsize;
     struct    videobuffer  _buffers[MAX_BUFFERS];
-    time_t    _lasttime;
-    int       _motionlow;
-    int       _motionhi;
-    mmotion*  _pmt;
-    int       _moved;
-    int       _noisediv;
-    bool     _fatal;
+    bool      _fatal;
 };
 
 #endif // V4LDEVICE_H

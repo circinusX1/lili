@@ -10,5 +10,21 @@ PROJECT(liveimage)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Wall -fpermissive -fstack-protector-all -g -O0")
-add_executable (liveimage  mainn.cpp  cbconf.cpp webcast.cpp jpeger.cpp mpeger.cpp outstrmfmt.cpp  sock.cpp  sockserver.cpp  v4ldevice.cpp  motion.cpp)
+add_executable (liveimage  
+acamera.cpp 
+cbconf.cpp 
+httpcam.cpp 
+imgsink.cpp 
+jpeger.cpp 
+localcam.cpp 
+mainn.cpp 
+motion.cpp 
+motion_track.cpp 
+mpeger.cpp 
+rtpudpcs.cpp 
+rtspcam.cpp 
+sock.cpp 
+sockserver.cpp 
+v4ldevice.cpp 
+webcast.cpp)
 TARGET_LINK_LIBRARIES( liveimage pthread jpeg v4l2 dl)

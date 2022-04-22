@@ -41,14 +41,14 @@ static void     _term_destination(j_compress_ptr cinfo);
 static int      _jpeg_mem_size(j_compress_ptr cinfo);
 static jpeger*  _pthis;
 
-jpeger::jpeger(int q):_image(0),_jpegQuality(q),_imgsize(0),_memsz(0)
+jpeger::jpeger(int q, bool bw):_image(0),_jpgq(q),_imgsize(0),_memsz(0)
 {
     _pthis=this;
     ::memset(&_cinfo, 0, sizeof(_cinfo));
     _cinfo.err = ::jpeg_std_error(&_jerr);
     jpeg_create_compress(&_cinfo);
     _jpeg_mem_dest(&_cinfo);
-
+    _bandw = bw;
 }
 
 jpeger::~jpeger()
@@ -57,31 +57,27 @@ jpeger::~jpeger()
     free (_image);  //dtor
 }
 
-bool jpeger::init(int,int)
+bool jpeger::init(const dims_t&)
 {
-    _bandw = CFG["I"]["bw_image"].to_int()==1;
     return true;
 }
 
 uint32_t jpeger::convert420(const uint8_t* fmt420, int insz,
                             int w, int h,
-                            int jpg_quality, uint8_t** pjpeg)
+                             const uint8_t** pjpeg)
 {
     const uint8_t* pstart = fmt420;
     (void)insz;
-    _imgsize =  _put_jpeg_yuv420p_memory(pstart, w, h, jpg_quality, 0);
+    _imgsize =  _put_jpeg_yuv420p_memory(pstart, w, h, _jpgq, 0);
     *pjpeg = _image;
     return  _imgsize;
 }
 
-uint32_t jpeger::convertBW(const uint8_t* uint8buf, int insz, int w, int h,
-                           int jpg_quality,
-                           uint8_t** pjpeg)
+uint32_t jpeger::convertBW(const uint8_t* uint8buf, int insz, int w, int h, const uint8_t** pjpeg)
 {
     (void)insz;
     if(_memsz)
     {
-        (void)jpg_quality;
         JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
         int row_stride;
 
@@ -219,7 +215,7 @@ void jpeger:: _jpeg_mem_dest(j_compress_ptr cinfo)
     dest->jpegsize = 0;
 
     _init_destination(&_cinfo);
-    std::cout << "      JPEGER MEM DEST \r\n";
+    TRACE() << "      JPEGER MEM DEST \r\n";
 
 }
 
@@ -230,7 +226,7 @@ static void  _init_destination(j_compress_ptr cinfo)
     dest->pub.free_in_buffer    = dest->bufsize;
     dest->jpegsize = 0;
 
-    // std::cout << "      JPEGER INIT TO "<<dest->buf <<","<<dest->bufsize << "bytes \r\n";
+    // TRACE() << "      JPEGER INIT TO "<<dest->buf <<","<<dest->bufsize << "bytes \r\n";
 }
 
 static boolean  _empty_output_buffer(j_compress_ptr cinfo)
@@ -240,7 +236,7 @@ static boolean  _empty_output_buffer(j_compress_ptr cinfo)
     size_t oldsize = _pthis->_memsz;
     uint8_t* nb = (uint8_t*)::malloc(oldsize + BLOCK_SZ);
     if(nb==nullptr){
-        std::cerr<<__FUNCTION__<<" out of memory \r\n";
+        TRACE()<<__FUNCTION__<<" out of memory \r\n";
         return FALSE;
     }
     ::memcpy(nb, _pthis->_image, oldsize);
@@ -253,7 +249,7 @@ static boolean  _empty_output_buffer(j_compress_ptr cinfo)
     dest->buf = _pthis->_image;
     dest->bufsize = _pthis->_memsz;
 
-    std::cout << "      JPEGER REALLOC TO "<<dest->buf <<","<<dest->bufsize << "bytes \r\n";
+    TRACE() << "      JPEGER REALLOC TO "<<dest->buf <<","<<dest->bufsize << "bytes \r\n";
     return TRUE;
 }
 
@@ -263,14 +259,14 @@ static void _term_destination(j_compress_ptr cinfo)
     size_t jpgsize = dest->bufsize -cinfo->dest->free_in_buffer;
     dest->jpegsize = jpgsize;
 
-    // std::cout << "      JPEGER TERM \r\n";
+    // TRACE() << "      JPEGER TERM \r\n";
 }
 
 static int _jpeg_mem_size(j_compress_ptr cinfo)
 {
     mem_dest_ptr dest = (mem_dest_ptr) cinfo->dest;
 
-    // std::cout << "      JPEG SZ "<<dest->jpegsize<<"\r\n" ;
+    // TRACE() << "      JPEG SZ "<<dest->jpegsize<<"\r\n" ;
 
     return dest->jpegsize;
 }

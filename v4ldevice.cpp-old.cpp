@@ -53,16 +53,16 @@ bool v4ldevice::open()
         for(int i=0; i < 8; i++)
         {
             std::string check = sdev + std::to_string(i);
-            TRACE() << "opening: " << check << "\n";
+            std::cout << "opening: " << check << "\n";
             if (::access(check.c_str(),0)!=0)
             {
-                TRACE() << "No Device:  "<< check << ", " <<  strerror(errno)  << "\n";
+                std::cout << "No Device:  "<< check << ", " <<  strerror(errno)  << "\n";
                 continue;
             }
             _device = v4l2_open(check.c_str(), O_RDWR | O_NONBLOCK, 0);
             if (-1 == _device)
             {
-                TRACE() << "Cannot open " << check << ", " <<  strerror(errno)  << "\n";
+                std::cout << "Cannot open " << check << ", " <<  strerror(errno)  << "\n";
                 continue;
             }
             _sdevice=check;
@@ -73,7 +73,7 @@ bool v4ldevice::open()
     {
         if (::access(_sdevice.c_str(),0)!=0)
         {
-            TRACE() << "No Device: "<< _sdevice << " " <<  errno  << "\n";
+            std::cout << "No Device: "<< _sdevice << " " <<  errno  << "\n";
             return false;
         }
         _device = v4l2_open(_sdevice.c_str(), O_RDWR | O_NONBLOCK, 0);
@@ -81,7 +81,7 @@ bool v4ldevice::open()
 
     if (-1 == _device)
     {
-        TRACE() << "Cannot open " << _sdevice << " " <<  errno  << "\n";
+        std::cout << "Cannot open " << _sdevice << " " <<  errno  << "\n";
         return false;
     }
 
@@ -94,19 +94,19 @@ bool v4ldevice::open()
 
     if (-1 == _ioctl(VIDIOC_QUERYCAP, &caps))
     {
-        TRACE() << "_ioctl" << _sdevice << " " <<  errno  << "\n";
+        std::cout << "_ioctl" << _sdevice << " " <<  errno  << "\n";
         return false;
     }
 
     if (!(caps.capabilities & V4L2_CAP_VIDEO_CAPTURE))
     {
-        TRACE() << "no video capture device" << _sdevice << " " <<  errno  << "\n";
+        std::cout << "no video capture device" << _sdevice << " " <<  errno  << "\n";
         return false;
     }
 
     if (!(caps.capabilities & V4L2_CAP_STREAMING))
     {
-        TRACE() << "no video streaming device" << _sdevice << " " <<  errno  << "\n";
+        std::cout << "no video streaming device" << _sdevice << " " <<  errno  << "\n";
         return false;
     }
     cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -132,7 +132,7 @@ bool v4ldevice::open()
     frmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
     if (-1 == _ioctl(VIDIOC_S_FMT, &frmt))
     {
-        TRACE() << "Unsupported format WxH" << _sdevice << " " <<  errno  << "\n";
+        std::cout << "Unsupported format WxH" << _sdevice << " " <<  errno  << "\n";
         return false;
     }
     // realign
@@ -140,7 +140,7 @@ bool v4ldevice::open()
     _xy[1] = frmt.fmt.pix.height;
     if (frmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUV420)
     {
-        TRACE() << "libv4l cannot process YUV420 format. \n";
+        std::cout << "libv4l cannot process YUV420 format. \n";
         return false;
     }
 
@@ -154,10 +154,10 @@ bool v4ldevice::open()
 
         if (-1 == _ioctl(VIDIOC_S_PARM, &fint))
         {
-            TRACE() << "error set frame interval " << _fps << "\n";
+            std::cout << "error set frame interval " << _fps << "\n";
         }
         _fps = fint.parm.capture.timeperframe.denominator;
-        TRACE() << "FPS: recalculated duet camera limitations at: " << _fps << "\n";
+        std::cout << "FPS: recalculated duet camera limitations at: " << _fps << "\n";
     }
     uint32_t wmin = frmt.fmt.pix.width * 2;
     if (frmt.fmt.pix.bytesperline < wmin)
@@ -180,7 +180,7 @@ bool v4ldevice::open()
 
     if (-1 == _ioctl(VIDIOC_REQBUFS, &req))
     {
-        TRACE() << "libv4l does not support VIDIOC_REQBUFS(V4L2_MEMORY_MMAP) . \n";
+        std::cout << "libv4l does not support VIDIOC_REQBUFS(V4L2_MEMORY_MMAP) . \n";
 
         req.count = VIDEO_BUFFS;
         req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -188,7 +188,7 @@ bool v4ldevice::open()
 
         if (-1 == _ioctl(VIDIOC_REQBUFS, &req))
         {
-            TRACE() << "libv4l does not support VIDIOC_REQBUFS(V4L2_MEMORY_USERPTR) . \n";
+            std::cout << "libv4l does not support VIDIOC_REQBUFS(V4L2_MEMORY_USERPTR) . \n";
             return false;
         }
 
@@ -201,7 +201,7 @@ bool v4ldevice::open()
             _buffers[i].mmap = V4L2_MEMORY_USERPTR;
             if (_buffers[i].start==0)
             {
-                TRACE() << "out of memory: " << buffer_size << " bytes \n";
+                std::cout << "out of memory: " << buffer_size << " bytes \n";
                 return false;
             }
 
@@ -214,7 +214,7 @@ bool v4ldevice::open()
 
             if (-1 == _ioctl(VIDIOC_QBUF, &buf))
             {
-                TRACE() << "VIDIOC_QBUF: " << buffer_size << " bytes \n";
+                std::cout << "VIDIOC_QBUF: " << buffer_size << " bytes \n";
                 return false;
             }
         }
@@ -227,7 +227,7 @@ bool v4ldevice::open()
     // continue with mmap
     if (req.count < 2)
     {
-        TRACE()<< "buffer memory \n";
+        std::cout<< "buffer memory \n";
         return false;
     }
 
@@ -241,7 +241,7 @@ bool v4ldevice::open()
 
         if (-1 == _ioctl(VIDIOC_QUERYBUF, &buf))
         {
-            TRACE()<< "VIDIOC_QUERYBUF memory \n";
+            std::cout<< "VIDIOC_QUERYBUF memory \n";
             return false;
         }
         _buffers[i].length = buf.length;
@@ -255,7 +255,7 @@ bool v4ldevice::open()
 
         if (MAP_FAILED == _buffers[i].start)
         {
-            TRACE()<< "MAP_FAILED memory \n";
+            std::cout<< "MAP_FAILED memory \n";
             return false;
         }
 
@@ -272,7 +272,6 @@ bool v4ldevice::open()
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (-1 == _ioctl(VIDIOC_STREAMON, &type))
         return false;
-
 
     _curbuffer=0;
     return true;
@@ -363,6 +362,7 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
             }
         }
     }
+
     _curbuffer = buf.index;
     _curts  = buf.timestamp;
     sz = _buffers[_curbuffer].length;

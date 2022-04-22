@@ -19,16 +19,19 @@
 #ifndef SOCKSERVER_H
 #define SOCKSERVER_H
 
-#include "sock.h"
-#include "cbconf.h"
 #include <string>
 #include <vector>
-
+#include "sock.h"
+#include "cbconf.h"
+#include "cbconf.h"
+#include "imgsink.h"
+#include "lilitypes.h"
 
 #define     WANTS_LIVE_IMAGE     0x1
 #define     WANTS_MOTION    0x4
 #define     WANTS_MAX       0x8
 #define     WANTS_HTML      0x10
+#define     WANTS_REMOTE    0x20
 
 #define  HEADER_JPG "HTTP/1.0 200 OK\r\n" \
                 "Connection: close\r\n"     \
@@ -40,6 +43,7 @@
 
 #define  HEADER_200 "HTTP/1.0 200 OK\r\n" \
                 "Connection: close\r\n"     \
+                "Content-Length: %d\r\n" \
                 "Server: liveimage/1.0\r\n"   \
                 "Cache-Control: no-cache\r\n\r\n"
 
@@ -53,42 +57,45 @@ public:
     int          _needs = 0;
     bool         _headered = false;;
     std::string  _message;
+    std::string  _camname;
 };
 
 
 class sockserver
 {
 public:
-    sockserver(int port, const string& proto);
+    sockserver(int port, const dims_t& d, EIMG_FMT fmt);
     virtual ~sockserver();
 
+    bool spin(event_t& event);
+    bool init(const dims_t&);
     bool listen();
     void close();
-    bool spin();
     int  socket() {return _s.socket();}
-    bool has_clients();
-    bool snap_on(  const uint8_t* jpg, uint32_t sz, int ifmt);
+    bool has_clients(const std::string& camname);
     bool stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants);
     int  anyone_needs()const;
-    bool just_stream(const uint8_t* buff, uint32_t);
+    void reg_cam(const std::string& camname);
+
 
 private:
     void _clean();
     bool _stream_jpeg(imgclient* pc, const uint8_t* buff, uint32_t sz);
     bool _stream_video(imgclient* pc, const uint8_t* buff, uint32_t sz);
     void _send_page(imgclient* pc, int ifmt);
+    void _check_and_keep(imgclient* pcli);
 
     tcp_srv_sock _s;
     tcp_srv_sock _h;
     int      _port;
-    string   _proto;
     std::vector<imgclient*> _clis;
     bool     _dirty;
     string   _host;
     string   _mime;
     int      _ifmt;
-    point_t  _wh;
+    dims_t  _img_size;
     bool     _mpg_multi_part=false;
+    std::vector<std::string> _cams;
 
 };
 

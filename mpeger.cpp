@@ -1,43 +1,31 @@
 ///   EXPERIMENTAL
 
-#include <dlfcn.h>
+
 #include "mpeger.h"
 #include "cbconf.h"
 
-void* dls(void* v, const char* fn)
-{
-    std::cerr << fn << "\n";
-    void* pr =  ::dlsym(v,fn);
-    if(pr==nullptr)
-    {
-        char* error;
-        if ((error = dlerror()) != NULL)  {
-            std::cerr << error << "\n";
-            return nullptr;
-        }
 
-    }
-    return pr;
-}
-
-
-#define SO_SYM(foo) _p##foo = (p_##foo)::dls(_av_format_lib,static_cast<const char*>(#foo));
-
-
-mpeger::mpeger(int q)
+mpeger::mpeger(int q, bool)
 {
     (void)q;
 }
 
-bool mpeger::init(int w, int h)
+mpeger::~mpeger()
+{
+    delete[] _frame->data[0];
+    _pavcodec_close(_pcodekCtx);
+    dlclose(_av_format_lib);
+}
+
+bool mpeger::init(const dims_t& imgsz)
 {
     char* error;
 
-    if(!CFG["I"]["lib_av"].exist())
+    if(!CFG["image"]["lib_av"].exist())
     {
         return false;
     }
-    _av_format_lib = ::dlopen(CFG["I"]["lib_av"].value().c_str(), RTLD_NOW);
+    _av_format_lib = ::dlopen(CFG["image"]["lib_av"].value().c_str(), RTLD_NOW);
     if(_av_format_lib == nullptr)
     {
         error = dlerror();
@@ -46,21 +34,21 @@ bool mpeger::init(int w, int h)
             return false;
         }
     }
-    SO_SYM(avcodec_register_all);
-    SO_SYM(avcodec_close);
-    SO_SYM(avcodec_open2);
-    SO_SYM(av_frame_alloc);
-    SO_SYM(av_frame_free);
-    SO_SYM(avcodec_alloc_context3);
-    SO_SYM(avcodec_find_encoder);
+    SO_SYM(_av_format_lib, avcodec_register_all);
+    SO_SYM(_av_format_lib, avcodec_close);
+    SO_SYM(_av_format_lib, avcodec_open2);
+    SO_SYM(_av_format_lib, av_frame_alloc);
+    SO_SYM(_av_format_lib, av_frame_free);
+    SO_SYM(_av_format_lib, avcodec_alloc_context3);
+    SO_SYM(_av_format_lib, avcodec_find_encoder);
 
-    SO_SYM(avpicture_alloc);
-    SO_SYM(avpicture_free);
-    SO_SYM(avpicture_fill);
+    SO_SYM(_av_format_lib, avpicture_alloc);
+    SO_SYM(_av_format_lib, avpicture_free);
+    SO_SYM(_av_format_lib, avpicture_fill);
 
-    SO_SYM(av_init_packet);
-    SO_SYM(avcodec_encode_video2);
-    SO_SYM(av_free_packet);
+    SO_SYM(_av_format_lib, av_init_packet);
+    SO_SYM(_av_format_lib, avcodec_encode_video2);
+    SO_SYM(_av_format_lib, av_free_packet);
 
     _pavcodec_register_all();
 
@@ -78,8 +66,8 @@ bool mpeger::init(int w, int h)
 
     _pcodekCtx->time_base.den = 1;
     _pcodekCtx->time_base.num = 1;
-    _pcodekCtx->width   = w;
-    _pcodekCtx->height  = h;
+    _pcodekCtx->width   = imgsz.x;
+    _pcodekCtx->height  = imgsz.y;
     _pcodekCtx->pix_fmt = AV_PIX_FMT_YUVJ420P; //AV_PIX_FMT_YUV420P;
 
     int error_val = _pavcodec_open2(_pcodekCtx,
@@ -99,19 +87,13 @@ bool mpeger::init(int w, int h)
     return true;
 }
 
-mpeger::~mpeger()
-{
-    delete[] _frame->data[0];
-    _pavcodec_close(_pcodekCtx);
-    dlclose(_av_format_lib);
-}
+
 
 uint32_t mpeger::convert420(const uint8_t* fmt420, int insz, int w,int h,
-                            int jpg_quality, uint8_t** ppng)
+                             const uint8_t** ppng)
 {
-    int  len = 0;
-    (void)jpg_quality;
     AVPacket pkt;
+    int  len = 0;
     int got_picture = 0;
     (void)insz;
 
@@ -146,15 +128,13 @@ uint32_t mpeger::convert420(const uint8_t* fmt420, int insz, int w,int h,
 }
 
 
-uint32_t mpeger::convertBW(const uint8_t* uint8buf, int insz, int w, int h,
-                           int jpg_quality, uint8_t** pjpeg)
+uint32_t mpeger::convertBW(const uint8_t* uint8buf, int insz, int w, int h, const uint8_t** pjpeg)
 
 {
     (void)uint8buf;
     (void)insz;
     (void)h;
     (void)w;
-    (void)jpg_quality;
     (void)pjpeg;
     return 0;
 }

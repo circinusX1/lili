@@ -5,31 +5,12 @@
 #include "sock.h"
 #include "sockserver.h"
 #include "encrypter.h"
+#include "imgsink.h"
+#include "lilitypes.h"
 
 
-#define    JPEG_MAGIC       0x12345678
 
-#define         PTRU_TOUT  30
-#define          PACK_ALIGN_1   __attribute__((packed, aligned(1)))
-
-struct  LiFrmHdr{
-    uint32_t    len;
-    uint32_t    magic;
-    uint32_t    mac;
-    uint32_t    index;
-    uint16_t    random;
-    uint16_t    udppunch;
-    uint16_t    wh[2];
-    uint8_t     format:3;
-    uint8_t     insync:1;
-    uint8_t     record:2;
-    uint8_t     event;          // lapse 1 movepix > 1
-    uint8_t     challange[16];
-    char        camname[16];
-}PACK_ALIGN_1;
-
-
-class WebCast : public OsThread
+class webcast : public osthread, public imgsink
 {
     enum eHOW{
         e_offline,
@@ -39,15 +20,17 @@ class WebCast : public OsThread
     };
 
 public:
-
-    WebCast(int);
-    virtual ~WebCast();
+    webcast(const std::string& name);
+    virtual ~webcast();
     virtual void thread_main();
-    void stream_frame(uint8_t* pjpg, size_t length, int mp, int w, int h);
+    virtual void stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
+                        const std::string& name, const event_t& event, EIMG_FMT eift);
     void kill();
+    virtual bool spin(event_t& event);
+    virtual bool init(const dims_t&);
 
 private:
-    void _go_streaming(const char* host, const char* camname, int port);
+    void _go_streaming(const char* host, int port);
 
 private:
 
@@ -63,6 +46,7 @@ private:
     uint32_t        _srv_key = 0;
     std::string     _security;
     Encryptor       _enc;
+    event_t         _filter;
 };
 
 inline int parseURL(const char* url, char* scheme, size_t

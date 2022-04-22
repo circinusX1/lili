@@ -1,7 +1,7 @@
 #ifndef MPEGER_H
 #define MPEGER_H
 
-#include "outstrmfmt.h"
+#include "encoder.h"
 extern "C"{
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
@@ -30,14 +30,14 @@ typedef int (*p_avcodec_encode_video2)(AVCodecContext *avctx, AVPacket *avpkt,
 typedef void (*p_av_free_packet)(AVPacket *pkt);
 
 
-class mpeger : public outstrmfmt
+class mpeger : public encoder
 {
 public:
-    mpeger(int q);
+    mpeger(int q, bool bw);
     virtual ~mpeger();
-    bool init(int x, int y);
-    uint32_t convert420(const uint8_t* fmt420, int insz, int w,int h, int jpg_quality, uint8_t** ppng);
-    uint32_t convertBW(const uint8_t* uint8buf, int insz, int w, int h, int jpg_quality, uint8_t** pjpeg);
+    bool init(const dims_t& imgsz);
+    uint32_t convert420(const uint8_t* fmt420, int insz, int w,int h, const uint8_t** ppng);
+    uint32_t convertBW(const uint8_t* uint8buf, int insz, int w, int h,  const uint8_t** pjpeg);
 
 private:
 

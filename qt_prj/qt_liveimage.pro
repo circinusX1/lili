@@ -7,13 +7,18 @@ CONFIG -= app_bundle
 
 
 SOURCES += \
+    ../acamera.cpp \
     ../cbconf.cpp \
-    ../encrypter.cpp \
+    ../httpcam.cpp \
+    ../imgsink.cpp \
     ../jpeger.cpp \
+    ../localcam.cpp \
     ../mainn.cpp \
     ../motion.cpp \
+    ../motion_track.cpp \
     ../mpeger.cpp \
-    ../outstrmfmt.cpp \
+    ../rtpudpcs.cpp \
+    ../rtspcam.cpp \
     ../sock.cpp \
     ../sockserver.cpp \
     ../v4ldevice.cpp \
@@ -34,13 +39,22 @@ DISTFILES += \
     ../liveimage.konf
 
 HEADERS += \
+    ../acamera.h \
     ../cbconf.h \
+    ../encoder.h \
     ../encrypter.h \
+    ../httpcam.h \
+    ../imgsink.h \
     ../jpeger.h \
+    ../lilitypes.h \
+    ../localcam.h \
     ../motion.h \
+    ../motion_track.h \
     ../mpeger.h \
     ../os.h \
-    ../outstrmfmt.h \
+    ../encoder.h \
+    ../rtpudpcs.h \
+    ../rtspcam.h \
     ../sock.h \
     ../sockserver.h \
     ../strutils.h \

@@ -20,28 +20,28 @@
 #include <iostream>
 #include <fcntl.h>
 #include "sockserver.h"
-#include "outstrmfmt.h"
+#include "encoder.h"
 #include "cbconf.h"
+
 #include "strutils.h"
 
 extern bool __alive;
 
-
-sockserver::sockserver(int port, const string& proto):_port(port),_proto(proto)
+sockserver::sockserver(int port, const dims_t& d, EIMG_FMT fmt):_port(port)
 {
-    _ifmt = CFG["I"]["img_format"].to_int();
-    _wh   = CFG["I"]["img_size"].to_point();
-    if(_ifmt==0){
+    _ifmt = fmt;
+    _img_size.x = d.x;
+    _img_size.y = d.y;
+    if(_ifmt==eFJPG){
         _mime="image/jpeg";
     }else{
         _mime="video/mpeg";
     }
-    _mpg_multi_part = CFG["server"]["mpg_multi_part"].to_int()==1;
+    _mpg_multi_part = CFG["server"]["mpeg_mpart"].to_int()==1;
 }
 
 sockserver::~sockserver()
 {
-    //dtor_headered
     close();
 }
 
@@ -57,7 +57,7 @@ AGAIN:
         //_s.set_blocking(0);
         if(_s.listen(4)!=0)
         {
-            std::cout <<"socket can't listen. Trying "<< (ntry+1) << " out of 10 " << DERR();
+            TRACE() <<"socket can't listen. Trying "<< (ntry+1) << " out of 10 \n" ;
 
             _s.destroy();
             sleep(1);
@@ -65,10 +65,10 @@ AGAIN:
                 goto AGAIN;
             return false;
         }
-        std::cout << "listening port"<< _port<<"\n";
+        TRACE() << "listening port"<< _port<<"\n";
         return true;
     }
-    std::cout <<"create socket. Trying "<< (ntry+1) << " out of 10 " << DERR();
+    TRACE() <<"create socket. Trying "<< (ntry+1) << " out of 10 \n";
     _s.destroy();
     sleep(2);
     if(++ntry<10)
@@ -87,7 +87,29 @@ void sockserver::close()
     }
 }
 
-bool sockserver::spin()
+void sockserver::_check_and_keep(imgclient* pcli)
+{
+    imgclient* pcliis = nullptr;
+    size_t     index = 0;
+
+    for(auto& s : _clis)
+    {
+        if(!::strcmp(s->ssock_addrip(),pcli->ssock_addrip()))
+        {
+            pcliis = s;
+            break;
+        }
+        ++index;
+    }
+    if(pcliis){
+        pcliis->destroy();
+        _clis[index] = pcli;
+    }else{
+        _clis.push_back(pcli);
+    }
+}
+
+bool sockserver::spin(event_t&)
 {
     fd_set  rd;
     int     ndfs = _s.socket();// _s.sock()+1;
@@ -107,22 +129,21 @@ bool sockserver::spin()
     }
     int is = ::select(ndfs+1, &rd, 0, 0, &tv);
     if(is ==-1) {
-        std::cout << "socket select() " << DERR();
+        TRACE() << "socket select() \n";
         __alive=false;
         return false;
     }
     if(is)
     {
-
         if(FD_ISSET(_s.socket(), &rd))
         {
             imgclient* cs = new imgclient();
             if(_s.accept(*cs)>0)
             {
-                //cs->set_blocking(0);
                 cs->_needs=0;
-                std::cout <<"\r\n\r\n-------------------\r\nnew connection \n";
-                _clis.push_back(cs);
+                TRACE() <<"\r\n\r\n-------------------\r\nnew connection \n";
+                // do we have a client form same ip ?
+                _check_and_keep(cs);
             }
         }
 
@@ -137,13 +158,13 @@ bool sockserver::spin()
                 int rt = s->receive(req,511);
                 if(rt==0)//con closed
                 {
-                    std::cout << "client closed connection \r\n";
+                    TRACE() << "client closed connection \r\n";
                     s->destroy();
                     _dirty = true;
                 }
                 if(rt > 0)
                 {
-                    std::cout << "REQUEST[" << req << "]\n";
+                    TRACE() << "REQUEST[" << req << "]\n";
                     char * host = strstr(req, "Host:");
                     if(host){
                         char* eol = strstr(host,"\r\n");
@@ -156,40 +177,52 @@ bool sockserver::spin()
                     if(s->_needs == 0 )
                     {
                         int iform = _ifmt;
-
-                        if( strstr(req, "/?motion") && iform == 0)
+                        for(const auto& a : _cams)
                         {
-                            std::cout << "?MOTION \n";
+                            if(strstr(req,a.c_str()))
+                            {
+                                s->_camname = a;
+                                break;
+                            }
+                        }
+
+                        if( strstr(req, "motion") && iform == 0)
+                        {
                             s->_needs = WANTS_MOTION;
                         }
-                        else if( strstr(req, "/?stream"))
+                        else if( strstr(req, "stream"))
                         {
-                            std::cout << "?STREAM \n";
                             s->_needs = WANTS_LIVE_IMAGE;
                         }
-                        else if( strstr(req, "/?html"))
+                        else if( strstr(req, "html"))
                         {
-                            std::cout <<"[" <<req << "] ?HTML \n";
                             s->_needs = WANTS_HTML;
                         }
                         else
                         {
-                            std::string r = "\r\n<H1>Invalid request</H1>"
+                            std::string r = "\r\n<H1>LIVEIMAGE</H1>"
                                             "<li><b>Image format is: ";
                             r += std::to_string(iform);
-                            r += "</b>"
-                                 "<li>For format=0 <a href='http://";
-                            r+=_host;r+="/?stream'>STREAM</a>"
-                                        "<li>For format=0 <a href='http://";
-                            r+=_host;r+="/?motion'>MOTION</a>"
-                                        "<li>For format=1 <a href='http://";
-                            r+=_host;r+="/?html'>HTML</a>";
-
-                            s->send(HEADER_200,strlen(HEADER_200));
+                            r += "</b>";
+                            for(const auto& a : _cams)
+                            {
+                                r+="<li>Camera: ";
+                                r+= a;
+                                r+="<ul>";
+                                r+="<li>JPEG: <a href='http://";
+                                r+=_host;r+="/?";r+=a; r+="&stream'>STREAM</a>";
+                                r+= "<li>JPEG <a href='http://";
+                                r+=_host;r+="/?";r+=a; r+="&motion'>MOTION</a>";
+                                r+= "<li>MPEG <a href='http://";
+                                r+=_host;r+="/?";r+=a;r+="&html'>HTML</a>";
+                                r+="</ul>";
+                            }
+                            int lrsp = ::snprintf(req,sizeof(req),HEADER_200,(int)r.length());
+                            s->send(req,lrsp);
                             s->send(r.c_str(), r.length());
                             s->destroy();
                             _dirty = true;
-                            std::cout << "RSPONSE[" << r << "]\n";
+                            TRACE() << "RSPONSE[" << r << "]\n";
                         }
                     }
 
@@ -202,46 +235,17 @@ bool sockserver::spin()
     return _dirty;
 }
 
-bool sockserver::has_clients()
+bool sockserver::has_clients(const std::string& camname)
 {
-    return _clis.size() > 0;
-}
-
-bool sockserver::snap_on( const uint8_t* jpg, uint32_t sz, int ifmt)
-{
-
-    static char HDR[] = "HTTP/1.0 200 OK\r\n"
-                        "Connection: close\r\n"
-                        "Server: liveimage/1.0\r\n"
-                        "Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n"
-                        "Pragma: no-cache\r\n"
-                        "Expires: Mon, 3 Jan 2000 12:34:56 GMT\r\n"
-                        "Content-Type: image/%s\r\n"
-                        "Content-length: %d\r\n"
-                        "X-Timestamp: %d.%06d\r\n\r\n";
-    struct  timeval timestamp;
-    char    hdr[512];
-    struct timezone tz = {5,0};
-    int szh;
-    int  rv = 0;
-
-    gettimeofday(&timestamp, &tz);
-    sprintf(hdr,HDR, ifmt, sz, (int) timestamp.tv_sec, (int) timestamp.tv_usec);
-    for(auto& s : _clis)
+    for(const auto& a : _clis)
     {
-        szh = strlen(hdr);
-        rv = s->sendall(hdr,szh,100);
-        rv = s->sendall(jpg,sz,1000);
-
-        if(rv == 0)
-        {
-            s->destroy();
-            _dirty=true;
+        if(a->_camname==camname){
+            return true;
         }
     }
-    _clean();
-    return rv==(int)sz;
+    return false;
 }
+
 
 int  sockserver::anyone_needs()const
 {
@@ -251,6 +255,10 @@ int  sockserver::anyone_needs()const
     return needs;
 }
 
+void sockserver::reg_cam(const std::string& camname)
+{
+    _cams.push_back(camname);
+}
 
 
 void sockserver::_clean()
@@ -264,7 +272,7 @@ AGAIN:
             {
                 delete (*s);
                 _clis.erase(s);
-                std::cout << " client gone \n";
+                TRACE() << " client gone \n";
                 goto AGAIN;
             }
         }
@@ -280,18 +288,19 @@ void sockserver::_send_page(imgclient* pc, int ifmt)
     if(ifmt==0)
     {
         len = ::sprintf(image,
-                        "<img width='640' src='http://%s/?stream' />",_host.c_str());
+                        "<img width='640' src='http://%s/?stream&%s' />",_host.c_str(), pc->_camname.c_str());
     }
     else
     {
         len = ::sprintf(image, "<video id='player' width='%d' height='%d' "
                                "controls>"
-                               "<src='http://%s/?stream' type='%s'>"
+                               "<src='http://%s/?stream&%s' type='%s'>"
                                "<p>This is fallback content</p>"
-                               "</video>\r\n", _wh.x,
-                                               _wh.y,
-                                               _host.c_str(),
-                                               _mime.c_str());
+                               "</video>\r\n", _img_size.x,
+                        _img_size.y,
+                        _host.c_str(),
+                        pc->_camname.c_str(),
+                        _mime.c_str());
 
     }
 
@@ -301,21 +310,13 @@ void sockserver::_send_page(imgclient* pc, int ifmt)
                     "Content-Type: text/html\r\n\r\n%s",len, image);
     pc->sendall(html, len);
 
-    std::cout << "serving page [" << html << "]\r\n";
-}
-
-bool sockserver::just_stream(const uint8_t* buff, uint32_t sz)
-{
-    for(auto& s : _clis)
-    {
-        this->_stream_video(s, buff, sz);
-    }
-    return true;
+    TRACE() << "serving page [" << html << "]\r\n";
 }
 
 bool sockserver::stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants)
 {
     bool rv;
+
     for(auto& s : _clis)
     {
         switch(s->_needs)
@@ -355,7 +356,7 @@ bool sockserver::_stream_jpeg(imgclient* pc, const uint8_t* buff,
     gettimeofday(&timestamp, &tz);
     if(!pc->_headered)
     {
-        std::cout << "HEADERING\r\n";
+        TRACE() << "HEADERING\r\n";
         rv = pc->sendall(HEADER_JPG, strlen(HEADER_JPG),100);
         if(rv!=strlen(HEADER_JPG))
         {
@@ -368,6 +369,7 @@ bool sockserver::_stream_jpeg(imgclient* pc, const uint8_t* buff,
     }
     sprintf(buffer, "Content-Type: %s\r\n" \
                     "Content-Length: %d\r\n" \
+                    "Connection: close\r\n" \
                     "X-Timestamp: %d.%06d\r\n" \
                     "\r\n",
             _mime.c_str(),
@@ -411,7 +413,11 @@ bool sockserver::_stream_video(imgclient* pc, const uint8_t* buff, uint32_t sz)
         _dirty=true;
         return false;
     }
-    std::cout << "streaming mpeg " << rv << "\r\n";
+    TRACE() << "streaming mpeg " << rv << "\r\n";
     return true;
 }
 
+bool sockserver::init(const dims_t&)
+{
+    return listen();
+}

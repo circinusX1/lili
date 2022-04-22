@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <dlfcn.h>
 
 /**
   Curly Bracket Document Layout  CBDL
@@ -30,7 +31,21 @@ THIS SOFTWARE.
 #include <utility>
 #include <sstream>
 #include <fstream>
-#define OOO std::cout
+
+
+struct Nullout
+{
+    Nullout& operator <<(uint8_t*){return *this;}
+    Nullout& operator <<(const char*){return *this;}
+    Nullout& operator <<(size_t){return *this;}
+    Nullout& operator <<(const std::string&){return *this;}
+};
+
+
+
+extern Nullout     nullout;
+
+#define TRACE()   std::cerr
 
 
 struct rect_t{
@@ -40,7 +55,7 @@ struct rect_t{
     int Y;
 };
 
-struct point_t{
+struct dims_t{
     int x;
     int y;
 };
@@ -120,6 +135,14 @@ public:
         }
 
         bool is_node()const{return _type==Node::eNODE;}
+
+        const Node& scope(size_t index=0)const{
+            static Node empty(Node::eNULL,"");
+            if(_values.size() && _values.size()>=index)
+                return *_values[index];
+            return empty;
+        }
+
 protected:
         const Node* _get_ref(const Node* pn, const std::string& v, std::string& idx)const
         {
@@ -170,7 +193,7 @@ protected:
         }
 
         const Node& node(size_t index=0)const{
-            static Node empty(Node::eNULL,"~error~");
+            static Node empty(Node::eNULL,"");
             if(_values.size() && _values.size()>=index)
                 return *_values[index];
             return empty;
@@ -183,7 +206,7 @@ public:
         }
 
         const std::string value(size_t index=0)const{
-            static std::string empty="~error~";
+            static std::string empty="";
             if(_values.size() )
             {
                 std::string v;
@@ -224,8 +247,8 @@ public:
 
             return rt;
         }
-        point_t to_point(int index=0)const{
-            point_t rt;
+        dims_t to_dims(int index=0)const{
+            dims_t rt;
             rt.x = to_int(index);
             rt.y = to_int(1);
             return rt;
@@ -327,7 +350,7 @@ private:
                     if(_line.empty() || _line[0]=='#')
                         continue;
                     if(eq){
-                        std::cerr<<" line:" << line << " missing ; at the end when using = or : \n";                    throw 2;
+                        TRACE()<<" line:" << line << " missing ; at the end when using = or : \n";                    throw 2;
                     }
                 }
                 if(longstr){
@@ -366,6 +389,7 @@ private:
                     case ':':
                     case '=':
                         eq=true;
+                        [[fallthrough]];
                     case '{':
                         if(escaping){
                              _string+=f;
@@ -456,10 +480,10 @@ private:
                 }
             }
         }else {
-            std::cerr<<"error open " << fname << "\n";
+            TRACE()<<"error open " << fname << "\n";
         }
         if(oc || _pnode==nullptr){
-            std::cerr<<"\r\n document malformated \r\n";
+            TRACE()<<"\r\n document malformated \r\n";
             throw(Cbdler::_ilast_line);
         }
         return _pnode;
@@ -479,7 +503,7 @@ private:
 
     void _wipe()
     {
-        OOO << _string.c_str() << "\n";
+        TRACE() << _string.c_str() << "\n";
         _string.clear();
     }
 
@@ -487,22 +511,22 @@ public:
     void print(const Node* p, int depth)
     {
         ++depth;
-        OOO << "\n";
-        for(int i=0;i<depth;i++) OOO<<"    ";
-        OOO  << p->_name.c_str();
+        TRACE() << "\n";
+        for(int i=0;i<depth;i++) TRACE()<<"    ";
+        TRACE()  << p->_name.c_str();
         if(p->_values.size())
         {
-            OOO << "\n";
-            for(int i=0;i<depth;i++) OOO<<"    ";
-            OOO << "{\n";
+            TRACE() << "\n";
+            for(int i=0;i<depth;i++) TRACE()<<"    ";
+            TRACE() << "{\n";
 
             for(const auto& a : p->_values)
             {
                 print(a,depth);
             }
-            OOO << "\n";
-            for(int i=0;i<depth;i++) OOO<<"    ";
-            OOO << "}\n";
+            TRACE() << "\n";
+            for(int i=0;i<depth;i++) TRACE()<<"    ";
+            TRACE() << "}\n";
         }
         --depth;
     }
@@ -519,5 +543,28 @@ private:
 
 extern Cbdler*  pCFG;
 #define CFG (*pCFG)
+
+
+inline void* dls(void* v, const char* fn)
+{
+    TRACE() << fn << "\n";
+    void* pr =  ::dlsym(v,fn);
+    if(pr==nullptr)
+    {
+        char* error;
+        if ((error = dlerror()) != NULL)  {
+            TRACE() << error << "\n";
+            return nullptr;
+        }
+
+    }
+    return pr;
+}
+
+
+#define SO_SYM(lib_,foo) _p##foo = (p_##foo)::dls(lib_,static_cast<const char*>(#foo));
+
+
+
 
 #endif // CONFIG_H

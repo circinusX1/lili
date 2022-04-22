@@ -24,31 +24,28 @@
 #include <string.h>
 #include <stdint.h>
 #include <string>
-#include "outstrmfmt.h"
+#include "encoder.h"
 #include <time.h>
 #include <jpeglib.h>
 
 #include <jerror.h>
 
-class jpeger : public outstrmfmt
+class jpeger : public encoder
 {
 public:
-    jpeger(int q);
+    jpeger(int q, bool bw);
     virtual ~jpeger();
-    bool init(int,int);
-    uint32_t convert420(const uint8_t* fmt420, int insz, int w ,int h,
-                        int jpg_quality, uint8_t** pjpeg);
-    uint32_t convertBW(const uint8_t* uint8buf, int insz, int w, int h,
-                           int jpg_quality, uint8_t** pjpeg);
+    bool init(const dims_t&);
+    uint32_t convert420(const uint8_t* fmt420, int insz, int w,int h, const uint8_t** pjpeg);
+    uint32_t convertBW(const uint8_t* uint8buf, int insz, int w, int h, const uint8_t** pjpeg);
 
 private:
 	int _put_jpeg_yuv420p_memory(const uint8_t *pyuv420,int width, int height, int jpg_quality, struct tm *tm);
 	void _jpeg_mem_dest(j_compress_ptr cinfo);
 
 public:
-
     uint8_t*        _image=nullptr;
-    int             _jpegQuality = 0;
+    int             _jpgq = 0;
     uint32_t        _imgsize = 0;
     unsigned long   _memsz = 0;
     bool            _bandw = false;

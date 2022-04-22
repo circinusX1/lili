@@ -191,6 +191,27 @@ public:
 };
 
 
+class AutoTryLock
+{
+    int _err = false;
+public:
+    AutoTryLock(mutex* m):_mutex(m)
+    {
+         _err = _mutex->try_lock();
+    }
+    AutoTryLock(const mutex* m):_mutex((mutex*)m)
+    {
+         _err = _mutex->try_lock();
+    }
+    ~AutoTryLock()
+    {
+        if(0==_err)
+            _mutex->munlock();
+    }
+private:
+    mutex* _mutex;
+};
+
 //-----------------------------------------------------------------------------
 class AutoLock
 {
@@ -279,10 +300,10 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-class OsThread
+class osthread
 {
 public:
-    OsThread()
+    osthread()
     {
         _bstop   = 1;
         _hthread = 0;
@@ -290,7 +311,7 @@ public:
         _init = -1;
     }
 
-    virtual ~OsThread()
+    virtual ~osthread()
     {
         if(!_stopped)
         {
@@ -396,7 +417,7 @@ private:
     bool        _joined;
     static void* SFoo(void* pData)
     {
-        OsThread* pT = reinterpret_cast<OsThread*>(pData);
+        osthread* pT = reinterpret_cast<osthread*>(pData);
         pT->_stopped = 0;
         pT->_start.snotify();
         if(pT-> _pre_thread_foo())

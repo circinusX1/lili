@@ -25,16 +25,16 @@
 #include <vector>
 #include "motion.h"
 #include "cbconf.h"
+#include "lilitypes.h"
 #include "os.h"
-
 
 
 class mmotion
 {
 public:
-    mmotion(int w, int h, int nr);
+    mmotion(int w, int h);
     ~mmotion();
-    int has_moved(uint8_t* p);
+    int det_mov_422(uint8_t* p, EIMG_FMT fmt);
     int  getw()const{return _mw;}
     int  geth()const{return _mh;}
     uint8_t*  motionbuf()const{return _motionbufs[2];}
@@ -55,7 +55,6 @@ private:
     int       _mmeter;
     rect_t    _inrect;
     rect_t    _outrect;
-
 };
 
 

@@ -22,6 +22,7 @@
 #include <iostream>
 #include <time.h>
 #include "sock.h"
+#include "cbconf.h"
 #ifndef _WIN32
 #   include <ifaddrs.h>
 #endif //
@@ -796,7 +797,7 @@ SOCKET tcp_srv_sock::accept(tcp_cli_sock& cliSock)
     ::getpeername(cliSock._thesock, (struct sockaddr *)&cliSock._remote_sin,
                   &addr_size);
     cliSock._remote_sin.commit();
-    /// std::cout << cliSock._remote_sin.c_str() << "\n";
+    /// TRACE() << cliSock._remote_sin.c_str() << "\n";
     return cliSock._thesock;
 }
 
@@ -1279,7 +1280,7 @@ int  udp_sock::send(const unsigned char* buff, const int length, int port, const
     }
     if(-1 == snd)
     {
-        std::cerr << strerror(errno) << "\n";
+        TRACE() << strerror(errno) << "\n";
     }
     return snd;
 }

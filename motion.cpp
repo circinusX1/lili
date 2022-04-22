@@ -5,12 +5,17 @@
 #include "cbconf.h"
 
 
-mmotion::mmotion(int w, int h, int nr):_w(w),_h(h),_noisediv(nr)
+mmotion::mmotion(int w, int h):_w(w),_h(h)
 {
-	_mw = _w/4;
-	_mh = _h/4;
-
+	_noisediv = CFG["move"]["noise_div"].to_int();
 	int motionsc = CFG["move"]["motion_scale"].to_int();
+	if(motionsc<2) motionsc=2;
+	else if(motionsc>16) motionsc=16;
+
+	if(_noisediv<4)_noisediv=4;
+	_mw = _w/motionsc;
+	_mh = _h/motionsc;
+
 	size_t msz = (_mw) * (_mh);
 	_inrect = CFG["move"]["in_rect"].to_rect();
 	_outrect = CFG["move"]["out_rect"].to_rect();
@@ -23,10 +28,6 @@ mmotion::mmotion(int w, int h, int nr):_w(w),_h(h),_noisediv(nr)
 	if(_outrect.y < 0)    _outrect.y=0;
 	if(_outrect.X >= _w)  _outrect.X=_w;
 	if(_outrect.Y >= _h)  _outrect.Y=_h;
-	if(motionsc<2) motionsc=2;
-	else if(motionsc>16) motionsc=16;
-
-	if(_noisediv<4)_noisediv=4;
 
 	_outrect.x/=motionsc;
 	_outrect.y/=motionsc;
@@ -56,12 +57,13 @@ mmotion::~mmotion()
     delete []_motionbufs[2];
 }
 
-int mmotion::has_moved(uint8_t* fmt420)
+int mmotion::det_mov_422(uint8_t* fmt420, EIMG_FMT fmt)
 {
-    register uint8_t *base_py = fmt420;
-    register uint8_t*          pSeen = _motionbufs[2];
-    register uint8_t*          prowprev = _motionbufs[_motionindex ? 0 : 1];
-    register uint8_t*          prowcur = _motionbufs[_motionindex ? 1 : 0];
+    assert(fmt==e422);
+    register uint8_t* base_py = fmt420;
+    register uint8_t* pSeen = _motionbufs[2];
+    register uint8_t* prowprev = _motionbufs[_motionindex ? 0 : 1];
+    register uint8_t* prowcur = _motionbufs[_motionindex ? 1 : 0];
     int               dx = _w / _mw;
     int               dy = _h / _mh;
     int               pixels = 0;
@@ -161,6 +163,7 @@ int mmotion::has_moved(uint8_t* fmt420)
 
     _dark /= pixels;
     _motionindex = !_motionindex;
+    //acale moves to (uint8-10)
     return _moves;
 }
 
