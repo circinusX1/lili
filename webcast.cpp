@@ -13,22 +13,7 @@ webcast::webcast(const std::string& name):imgsink(name)
 {
     ::memset(&_hdr,0,sizeof(_hdr));
     _hdr.magic   = JPEG_MAGIC;
-    _filter.predicate = 0;
 
-    size_t cmds = CFG["webcast"]["record"].count();
-    for(size_t c = 0; c < cmds; c++)
-    {
-        const std::string& cfg = CFG["webcast"]["record"].value(c);
-        if(cfg=="motion")
-            _filter.predicate |= EVT_MOTION;
-        if(cfg=="timelapse")
-            _filter.predicate |= EVT_TLAPSE;
-        if(cfg=="signal")
-            _filter.predicate |= EVT_SIGNAL;
-        if(cfg=="force")
-            _filter.predicate |= EVT_FORCE;
-
-    }
     _hdr.insync  = CFG["webcast"]["insync"].to_int();
     _cast_fps    = CFG["webcast"]["cast_fps"].to_int();
     _pool_intl   = CFG["webcast"]["pool_intl"].to_int();
@@ -51,28 +36,25 @@ webcast::~webcast()
 void webcast::stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
                      const std::string& name, const event_t& event, EIMG_FMT eift)
 {
-    if(_filter.predicate & EVT_FORCE || _filter.predicate & event.predicate)
-    {
-        AutoLock a(&_mut);
+    AutoLock a(&_mut);
 
-        if(_frame==nullptr){
-            _frame = new uint8_t[len + EXTRA_SPACE];
-            _buffsz = len + EXTRA_SPACE;
-        }
-        if(len > _buffsz){
-            delete[] _frame;
-            _frame = new uint8_t[len + EXTRA_SPACE];
-            TRACE() << "renew " << len << "\n";
-            _buffsz = len + EXTRA_SPACE;
-        }
-        ::memcpy(_frame, pb, len);
-        _hdr.wh[0]   = imgsz.x;
-        _hdr.wh[1]   = imgsz.y;
-        _hdr.len     = len;
-        _hdr.event   = event;
-        _hdr.format  = eift;
-        ::strncpy(_hdr.camname,name.c_str(),sizeof(_hdr.camname));
+    if(_frame==nullptr){
+        _frame = new uint8_t[len + EXTRA_SPACE];
+        _buffsz = len + EXTRA_SPACE;
     }
+    if(len > _buffsz){
+        delete[] _frame;
+        _frame = new uint8_t[len + EXTRA_SPACE];
+        TRACE() << "renew " << len << "\n";
+        _buffsz = len + EXTRA_SPACE;
+    }
+    ::memcpy(_frame, pb, len);
+    _hdr.wh[0]   = imgsz.x;
+    _hdr.wh[1]   = imgsz.y;
+    _hdr.len     = len;
+    _hdr.event   = event;
+    _hdr.format  = eift;
+    ::strncpy(_hdr.camname,name.c_str(),sizeof(_hdr.camname));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +79,7 @@ void webcast::thread_main()
 
     while(!this->osthread::is_stopped() && __alive)
     {
-        if((time(0)-ctime > _pool_intl && _hdr.len) || uconnect)
+        if((time(0)-ctime > _pool_intl || _hdr.len))
         {
             _go_streaming(host, port);
             ctime = time(0);
@@ -126,6 +108,7 @@ void webcast::_go_streaming(const char* host, int port)
     int             frm_intl = 1000 / (1+_cast_fps);
     bool            needsframe = false;
     LiFrmHdr        jhdr;
+    int             noframe = 0;
 
     _s.destroy();
     if(_s.create(port))
@@ -186,11 +169,19 @@ void webcast::_go_streaming(const char* host, int port)
                         CHECK_SEND(&_hdr, sizeof(_hdr));
                         ///////////////////////////////////////////////  frame
                         CHECK_SEND(_frame, _hdr.len)
+                        noframe = 0;
+                    }else{
+                        noframe += frm_intl;
                     }
                     TRACE() << "sent " << _hdr.len << "\n" ;
+                    _hdr.len = 0;
                 }while(0);
 END_WILE:
                 msleep(1+frm_intl);
+                if(noframe > _pool_intl*1000){
+                    TRACE() << "no nwe frames \n" ;
+                    break;
+                }
             }
         }
     }

@@ -46,7 +46,6 @@ private:
     uint32_t        _srv_key = 0;
     std::string     _security;
     Encryptor       _enc;
-    event_t         _filter;
 };
 
 inline int parseURL(const char* url, char* scheme, size_t
