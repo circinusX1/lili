@@ -12,20 +12,13 @@ motion_track::motion_track(int motionlow, int motionhi, const dims_t& wh):_mt(wh
         _motionhi=8000;
 }
 
-uint8_t motion_track::movement(const uint8_t* buff, EIMG_FMT fmt)
+int motion_track::movement(const uint8_t* buff, EIMG_FMT fmt)
 {
     if(fmt==e422){
         int movedpix =  _mt.det_mov_422((uint8_t*)buff, fmt);
-        // scale molo..mohi -> 10..255
-
         if(movedpix > _motionlow && movedpix < _motionhi)
         {
-            float reali = _motionhi-_motionlow;
-            float interv = MAX_PIX_MOVE-EVENTS_CUST;
-            float raport = interv/reali;
-            movedpix *= raport;
-            movedpix += EVENTS_CUST;
-            return uint8_t(movedpix);
+             return uint8_t(movedpix);
         }
     }
     return 0;

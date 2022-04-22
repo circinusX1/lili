@@ -13,6 +13,18 @@
 extern std::string empty_string;
 #define          PACK_ALIGN_1   __attribute__((packed,aligned(1)))
 
+struct  event_t {
+    uint8_t     predicate;
+    uint16_t    movepix:12;
+}PACK_ALIGN_1;
+
+#define CMD_RECORD      0x1
+#define CMD_SAVLOC      0x2
+#define EVT_MOTION      0x4
+#define EVT_TLAPSE      0x8
+#define EVT_SIGNAL      0x10
+#define EVT_FORCE       0x20
+
 struct  LiFrmHdr{
     uint32_t    len;
     uint32_t    magic;
@@ -21,10 +33,9 @@ struct  LiFrmHdr{
     uint16_t    random;
     uint16_t    udppunch;
     uint16_t    wh[2];
-    uint8_t     format:3;
-    uint8_t     insync:1;
-    uint8_t     record:2;
-    uint8_t     event;          // lapse 1 movepix > 1
+    uint8_t     format:6;
+    uint8_t     insync:2;
+    event_t     event;
     uint8_t     challange[16];
     char        camname[16];
 }PACK_ALIGN_1;

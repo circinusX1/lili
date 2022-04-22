@@ -45,7 +45,7 @@ int  TcpJpgMpartCam::transfer(const std::vector<RawSock*>& clis)
             if(ph->magic==JPEG_MAGIC){
                 _header.event = ph->event;
                 _data.vfl = ph->len;
-                if((ph->record && ph->event) || ph->record ==2){
+                if(ph->event.predicate){
                     _nowt = SECS();
                 }
                 _data.advance_prc(sizeof(LiFrmHdr));

@@ -22,7 +22,7 @@ TcpCamCli::TcpCamCli(RawSock& o,
     _seps = 0;
     _name = _header.camname;
 
-    if(_header.record)
+    if(_header.event.predicate & CMD_RECORD)
     {
         time_t     now = SECS();
         char       buf[128];
@@ -182,7 +182,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
         _pf->stream(vf,rec_off);
     }
 
-    if(!_recordname.empty() && _header.record)
+    if(!_recordname.empty() && _header.event.predicate & CMD_RECORD)
     {
         FILE*   pf;
         char    fn[400];

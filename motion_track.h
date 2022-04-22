@@ -10,7 +10,7 @@ class motion_track
 public:
     motion_track(int motionlow, int motionhi, const dims_t& wh);
 
-    uint8_t movement(const uint8_t* buff, EIMG_FMT fmt);
+    int movement(const uint8_t* buff, EIMG_FMT fmt);
     int darkaverage()const{return _mt.darkav();}
     const uint8_t* getm(int& w, int& h, int& sz);
 

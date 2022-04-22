@@ -29,9 +29,9 @@ static char HDR[] = "HTTP/1.0 200 OK\r\n"
                     "Content-length: %d\r\n"
                     "X-Timestamp: %d.%06d\r\n\r\n";
 static const char* SRV = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\""
-                  "<HTML><BODY>LIVESERVER 1.0</BODY></HTML>"
-                  "<sub style='float:right'>by Marius C. "
-                  "<a href='https://github.com/circinusX1/liveimage'>liveimage</a></sub>";
+                         "<HTML><BODY>LIVESERVER 1.0</BODY></HTML>"
+                         "<sub style='float:right'>by Marius C. "
+                         "<a href='https://github.com/circinusX1/liveimage'>liveimage</a></sub>";
 
 
 extern Encryptor*   pENC;
@@ -238,16 +238,13 @@ bool    TcpSrv::_on_cam()
             if(_p.client_was_here(std::string(hdr.camname))==false)
             {
                 _p.record_cam(hdr.camname);
-                if(hdr.record == false){
+                if(!(hdr.event.predicate & EVT_FORCE))
+                {
                     GLOGW("CAM:" << hdr.camname <<  ", no client was here, no recors required ");
                     throw RawSock::CAM;
                 }
-                if(hdr.record == true && hdr.event==0){
-                    GLOGW("CAM:" << hdr.camname <<  ", no client was here, recors required but no movement");
-                    throw RawSock::CAM;
-                }
             }
-            GLOGW("camera  "<<hdr.camname<<" accepted");
+            GLOGW("camera  "<< hdr.camname << " accepted");
 
             RawSock* pcam = nullptr;
             if(hdr.format==0)
@@ -334,7 +331,7 @@ bool    TcpSrv::_show_dummy(RawSock& s, const Request& re)
     _htmlhdr(s, re, page.length());
     if(s.sendall(page.c_str(),page.length())!=int(page.length()))
     {
-         throw RawSock::CLIENT;
+        throw RawSock::CLIENT;
     }
     return true;
 }
@@ -346,8 +343,8 @@ bool    TcpSrv::_show_dummy(RawSock& s, const Request& re)
  * @return
  */
 bool    TcpSrv::_show_streams(RawSock& s,
-                             const Request& re,
-                             const std::string& r)
+                              const Request& re,
+                              const std::string& r)
 {
     std::string channels=SRV;
     std::string host = re.headerAt("Host");
@@ -365,8 +362,8 @@ bool    TcpSrv::_show_streams(RawSock& s,
  * @return
  */
 bool    TcpSrv::_deal_cam_name(RawSock& s,
-                             const Request& htr,
-                             const std::string& r)
+                               const Request& htr,
+                               const std::string& r)
 {
     const TcpCamCli* pcs = _p.has(r);
     //is there a cam for this name ?
@@ -410,7 +407,7 @@ bool    TcpSrv::_deal_cam_name(RawSock& s,
  * @return
  */
 bool    TcpSrv::_show_status(RawSock& s, const Request& re,
-                            const std::string& r)
+                             const std::string& r)
 {
     const TcpCamCli* pcs = _p.has(r);
     if(_p.has(r) && !_p.has(s)) //one client for this stream
@@ -434,8 +431,8 @@ void TcpSrv::_htmlhdr(RawSock& s, const Request& re, int length)
 
     gettimeofday(&timestamp, &tz);
     int len = (int)sprintf(hdr,HDR,  length,
-        (int) timestamp.tv_sec,
-        (int) timestamp.tv_usec);
+                           (int) timestamp.tv_sec,
+                           (int) timestamp.tv_usec);
     if(s.sendall(hdr, len) != len)
     {
         throw RawSock::CLIENT;
