@@ -1,4 +1,4 @@
-
+#ifdef WITH_RTSP
 #include <stdio.h>
 #include <string.h>
 #include "rtspcam.h"
@@ -276,3 +276,4 @@ bool rtspcam::init(const dims_t&)
     return start_thread()==0;
 }
 
+#endif

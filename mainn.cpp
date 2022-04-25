@@ -188,10 +188,15 @@ void kapture()
         acamera* pc;
         if(!url.empty())
         {
+#ifdef WITH_RTSP
             if(url.find("rtsp")!=(size_t)-1)
                 pc = new rtspcam(name, url, pd);
+            else
+#endif
             if(url.find("http")!=(size_t)-1)
                 pc = new httpcam(name, url, pd);
+            else
+                TRACE() << "NO CAM CONFIGURED\n";
 
         }
         else if(!dev.empty())

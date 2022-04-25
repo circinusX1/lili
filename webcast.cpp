@@ -62,7 +62,6 @@ void webcast::thread_main()
 {
     time_t          ctime = 0;
     tcp_cli_sock    cli;
-    bool            uconnect = false;
     char            scheme[8];
     int             port = 80;
     char            host[32];
@@ -178,10 +177,10 @@ void webcast::_go_streaming(const char* host, int port)
                 }while(0);
 END_WILE:
                 msleep(1+frm_intl);
-                if(noframe > _pool_intl*1000){
-                    TRACE() << "no nwe frames \n" ;
-                    break;
-                }
+//                if(noframe > _pool_intl*1000){
+  //                  TRACE() << "no nwe frames \n" ;
+    //                break;
+      //          }
             }
         }
     }

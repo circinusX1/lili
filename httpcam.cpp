@@ -1,6 +1,7 @@
 #include "httpcam.h"
 #include "sock.h"
 #include "webcast.h"
+//#include "CImg.h"
 
 extern bool __alive;
 
@@ -20,7 +21,9 @@ httpcam::httpcam(const std::string& name,
     _format         = n["format"].value() == "image/jpg"  ? eFJPG : eFMPG;
     _motionurl      = n["motion"].value(0);
     _motiontoken    = n["motion"].value(1);
-    _msleep        = 1000 / n["fps"].to_int();
+    _imgsz.x        = n["imgsz"].to_int(0);
+    _imgsz.y        = n["imgsz"].to_int(1);
+    _msleep         = 1000 / n["fps"].to_int();
     if(_msleep > 1000)_msleep = 1000;
     else if(_msleep<500)_msleep=500;
 }
@@ -158,5 +161,22 @@ void httpcam::thread_main()
         ::usleep(1000*_msleep);
     }
 }
+
+void httpcam::to_gray()
+{
+    if(_imgsz.x){
+
+
+    }
+}
+
+
+
+
+
+
+
+
+
 
 

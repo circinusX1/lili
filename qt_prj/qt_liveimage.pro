@@ -4,6 +4,11 @@ QT -= core
 CONFIG += c++11 console
 CONFIG -= app_bundle
 #QMAKE_LFLAGS += -no-pie
+INCLUDEPATH += /usr/include/opencv4
+DEFINES += cimg_use_jpeg
+DEFINES += cimg_display=0
+
+# QMAKE_CFLAGS += -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label -Wshadow -std=c++11 -pedantic -Dcimg_display=0 -Ofast -mtune=generic -lm
 
 
 SOURCES += \
