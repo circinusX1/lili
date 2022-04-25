@@ -60,6 +60,7 @@ enum EIMG_FMT{eFJPG, eFMPG, e422};
 #define EVT_KKEP_ALIVE  0x80
 #define CMD_RECORD      0x1
 #define CMD_SAVLOC      0x2
+#define EVT_JUST_MOTION      0x4
 #define EVT_MOTION      0x4|0x80
 #define EVT_TLAPSE      0x8|0x80
 #define EVT_SIGNAL      0x10|0x80

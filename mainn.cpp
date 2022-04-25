@@ -67,6 +67,7 @@ struct  MotionLapse{
     int          on_max_files   = CFG["record"]["on_max_files"].to_int(0);
     std::string  on_max_comand  = CFG["record"]["on_max_files"].value(1);
     int          sig_process    = CFG["move"]["sig_process"].to_int();
+    std::string  on_move        = CFG["move"]["on_move"].value();
     int          movementintertia = 0;
     int          firstimage = 0;
 };
@@ -305,8 +306,11 @@ void motion_lapse(motion_track* mt,
             }
         }
         if(pm->event.movepix){
+            TRACE() << "movpix = " << pm->event.movepix << "\n";
             pm->event.predicate |= EVT_MOTION;
-        }
+        }else{
+            pm->event.predicate &= ~EVT_MOTION;
+	}
         pm->tickmove = now;
     }
 
@@ -316,7 +320,9 @@ void motion_lapse(motion_track* mt,
         {
             pm->event.predicate |= EVT_TLAPSE;
             pm->lapsetick = now;
-        }
+        }else{
+            pm->event.predicate &= ~EVT_TLAPSE;
+	}
     }
 
     if(mt->darkaverage() < pm->dark_lapse)
@@ -329,6 +335,10 @@ void motion_lapse(motion_track* mt,
         _sig_proc_capture=0;
         pm->event.predicate |= EVT_SIGNAL;
      }
+
+   if((pm->event.predicate & EVT_JUST_MOTION) != 0){
+   	::system(pm->on_move.c_str());
+   }
 
 
     if((pm->event.predicate & FLAG_SAVE && pm->event.movepix) ||

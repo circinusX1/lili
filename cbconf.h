@@ -45,7 +45,7 @@ struct Nullout
 
 extern Nullout     nullout;
 
-#define TRACE()   std::cerr
+#define TRACE()   std::cout
 
 
 struct rect_t{
