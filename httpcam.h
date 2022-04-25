@@ -16,13 +16,17 @@ public:
     virtual void thread_main();
 
 private:
+    void    to_gray();
+
+private:
     bool            _moved = true;
     Frame           _frame[2];
     int             _ifrm = 0;
+    dims_t          _imgsz = {0,0};
     std::string     _motionurl;
     std::string     _motiontoken;
     EIMG_FMT        _format;
-    mutex           _mut;
+    mutexx          _mut;
     int             _msleep = 1000;
 };
 

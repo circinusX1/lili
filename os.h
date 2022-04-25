@@ -104,11 +104,11 @@ private:
     pthread_mutex_t _mutex;
 };
 //-------;----------------------------------------------------------------------
-class mutex
+class mutexx
 {
     mutable pthread_mutex_t _mut;
 public:
-    mutex()
+    mutexx()
     {
         pthread_mutexattr_t     attr;
 
@@ -118,7 +118,7 @@ public:
         pthread_mutexattr_destroy(&attr);
     }
 
-    virtual ~mutex()
+    virtual ~mutexx()
     {
         pthread_mutex_unlock(&_mut);
         pthread_mutex_destroy(&_mut);
@@ -195,11 +195,11 @@ class AutoTryLock
 {
     int _err = false;
 public:
-    AutoTryLock(mutex* m):_mutex(m)
+    AutoTryLock(mutexx* m):_mutex(m)
     {
          _err = _mutex->try_lock();
     }
-    AutoTryLock(const mutex* m):_mutex((mutex*)m)
+    AutoTryLock(const mutexx* m):_mutex((mutexx*)m)
     {
          _err = _mutex->try_lock();
     }
@@ -209,18 +209,18 @@ public:
             _mutex->munlock();
     }
 private:
-    mutex* _mutex;
+    mutexx* _mutex;
 };
 
 //-----------------------------------------------------------------------------
 class AutoLock
 {
 public:
-    AutoLock(mutex* m):_mutex(m)
+    AutoLock(mutexx* m):_mutex(m)
     {
          _mutex->mlock();
     }
-    AutoLock(const mutex* m):_mutex((mutex*)m)
+    AutoLock(const mutexx* m):_mutex((mutexx*)m)
     {
          _mutex->mlock();
     }
@@ -229,7 +229,7 @@ public:
         _mutex->munlock();
     }
 private:
-    mutex* _mutex;
+    mutexx* _mutex;
 };
 
 //-----------------------------------------------------------------------------
@@ -294,7 +294,7 @@ public:
     };
 
 private:
-    mutex       _mv, _m, _mp;
+    mutexx       _mv, _m, _mp;
     u_int32_t   _viewers;
 
 };
@@ -409,7 +409,7 @@ protected:
 
 private:
     int         _init;
-    mutex       _mutex;
+    mutexx       _mutex;
     semaphore   _start;
     pthread_attr_t  _attr;
     THANDLE     _hthread;

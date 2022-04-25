@@ -34,7 +34,7 @@ private:
 
 private:
 
-    mutex           _mut;
+    mutexx           _mut;
     uint8_t*        _frame  = nullptr;
     bool            _headered = false;
     time_t          _last_clicheck=0;
