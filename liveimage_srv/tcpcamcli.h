@@ -10,6 +10,7 @@
 class TcpCamCli;
 class TcpWebSock;
 
+
 class TcpCamCli : public RawSock
 {
 public:
@@ -26,7 +27,7 @@ protected:
     size_t    _deliverFrame(int);
 
 protected:
-    Fpip*       _pf = nullptr;
+    Fpip*       _pfpipe = nullptr;
     std::set<TcpWebSock*>  _pclis;
     size_t      _cap = 0;
     size_t      _byteson=0;

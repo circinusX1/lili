@@ -1,5 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
-///
+
+#include <cstdio>
+#include <jpeglib.h>
+#include <jerror.h>
+#define cimg_plugin "jpeg_buffer.h"
+#include "CImg.h"
+using namespace cimg_library;
+
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "main.h"
@@ -7,6 +14,7 @@
 #include "tcpwebsock.h"
 #include "fpipe.h"
 #include "sheller.h"
+
 
 #define    MAX_JPG_FRM      65536
 /**
@@ -49,7 +57,7 @@ TcpCamCli::TcpCamCli(RawSock& o,
     {
         ::mkdir(fnp,0777);
     }
-    ::snprintf(fnp,sizeof(fnp)-1,"%s/%s",__files_recs,_recordname.c_str());
+    ::snprintf(fnp,sizeof(fnp)-1,"%s%s",__files_recs,_recordname.c_str());
     if(::access(fnp,0)!=0)
     {
         ::mkdir(fnp,0777);
@@ -73,7 +81,7 @@ TcpCamCli::~TcpCamCli()
  */
 bool TcpCamCli::destroy(bool be)
 {
-    DELETE_PTR(_pf);
+    DELETE_PTR(_pfpipe);
     return RawSock::destroy(be);
 }
 
@@ -111,11 +119,11 @@ void TcpCamCli::bind(TcpWebSock* pcs,bool addremove)
             }
         }
     }
-    DELETE_PTR(_pf);
+    DELETE_PTR(_pfpipe);
     {
-        if(_pipefile && _pf == nullptr)
+        if(_pipefile && _pfpipe == nullptr)
         {
-            _pf = new Fpip(_name);
+            _pfpipe = new Fpip(_name);
         }
     }
 }
@@ -125,8 +133,8 @@ void TcpCamCli::bind(TcpWebSock* pcs,bool addremove)
  */
 void TcpCamCli::can_send(bool force)
 {
-   if((_header.insync && tick_count()-_lastask>10000) || _ask_frame)
-   {
+    if((_header.insync && tick_count()-_lastask>10000) || _ask_frame)
+    {
         _header.mac = 888;
         this->snd((const uint8_t*)&_header,sizeof(_header),0);
         _ask_frame = 0;
@@ -155,12 +163,12 @@ int TcpCamCli::transfer(const std::vector<RawSock*>& clis)
  * @brief TcpCamCli::_deliverChunk
  * @param vf
  */
-int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
+int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
 {
     int  clients = 0;
     time_t now = SECS();
 
-    _bps += rec_off;
+    _bps += imgsz;
     if(now > _fpst+5)
     {
         _fpst=now;
@@ -173,29 +181,38 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf,int rec_off)
         for(const auto& cs : _pclis)
         {
             if(cs->isopen()){
-                cs->snd(vf,rec_off,_rtpseq);
+                cs->snd(vf,imgsz,_rtpseq);
             }
         }
     }
-    else if(_pf)
+    else if(_pfpipe)
     {
-        _pf->stream(vf,rec_off);
+        _pfpipe->stream(vf,imgsz);
     }
 
     if(!_recordname.empty() && _header.event.predicate & CMD_RECORD)
     {
-        FILE*   pf;
-        char    fn[400];
-        const uint8_t* bf = vf;
+        //FILE*   pf;
+        char    fn[256];
+        constexpr unsigned char purple[] = { 255, 0, 0 };
+        constexpr unsigned char black[] = { 0, 0, 0 };
+
+        CImg<unsigned char> img;
+        img.load_jpeg_buffer(vf, imgsz);
+        ::snprintf(fn, sizeof(fn),"%s:%s,%d",str_time(), _name.c_str(), _header.event.movepix);
+
+        img.draw_text(0,0, fn, purple,black,1,26);
 
         snprintf(fn,sizeof(fn),"%s/%02d-%05zu.jpg",_fpath.c_str(),_header.event.movepix,_seq++);
-
+        img.save(fn);
+        /*
         pf = ::fopen(fn,"wb");
         if(pf)
         {
-            ::fwrite(bf,1,rec_off, pf);
+            ::fwrite(bf,1,imgsz, pf);
             ::fclose(pf);
         }
+        */
         if((int)_seq > (int)_maxseq)
         {
             if(!_onmaxseq.empty())

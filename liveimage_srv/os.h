@@ -541,7 +541,7 @@ inline bool IDLE_THREAD()
 inline kchar*  str_time()
 {
     static char timestamp[64];
-    time_t  curtime = SECS();
+    time_t  curtime = time(0);
 
     strcpy(timestamp,ctime(&curtime));
     char *pe = strchr(timestamp,'\r');
