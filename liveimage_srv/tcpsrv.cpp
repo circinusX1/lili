@@ -309,7 +309,7 @@ bool    TcpSrv::_on_cli()
                     __alive=false;
                     throw RawSock::CLIENT;
                 }
-                return _show_streams(s, req, std::string(hdr)); //we dont know what it is
+//                return _show_streams(s, req, std::string(hdr)); //we dont know what it is
             }
             return _show_dummy(s, req);
         }
