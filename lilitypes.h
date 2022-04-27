@@ -27,7 +27,17 @@ public:
         *pb = buf;
         return len;
     }
-    void copy(const uint8_t* p, size_t nlen)
+    void realloc(size_t nlen){
+        if(nlen > cap){
+            delete[] buf;
+            cap = ((nlen/STEP_LEN)+1)*STEP_LEN;
+            buf = new uint8_t[cap];
+            assert(buf);
+            len=0;
+        }
+
+    }
+    void copy(const uint8_t* p, size_t off, size_t nlen)
     {
         if(nlen > cap){
             delete[] buf;
@@ -35,7 +45,7 @@ public:
             buf = new uint8_t[cap];
             assert(buf);
         }
-        ::memcpy(buf, p, nlen);
+        ::memcpy(buf+off, p, nlen);
         len = nlen;
     }
     void    set_len(size_t l){len=l;}
@@ -65,16 +75,12 @@ enum EIMG_FMT{eFJPG, eFMPG, e422};
 #define EVT_TLAPSE      0x8|0x80
 #define EVT_SIGNAL      0x10|0x80
 #define EVT_FORCE       0x20|0x80
-
+#define FLG_STAMP       0x40
 
 struct  event_t {
     uint8_t     predicate;
     uint16_t    movepix:12;
 }PACK_ALIGN_1;
-
-
-#define         PTRU_TOUT  30
-
 
 struct  LiFrmHdr{
     uint32_t    len;

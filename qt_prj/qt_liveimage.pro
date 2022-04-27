@@ -4,15 +4,15 @@ QT -= core
 CONFIG += c++11 console
 CONFIG -= app_bundle
 #QMAKE_LFLAGS += -no-pie
-INCLUDEPATH += /usr/include/opencv4
 DEFINES += cimg_use_jpeg
 DEFINES += cimg_display=0
-
+DEFINED += QTPRO
 # QMAKE_CFLAGS += -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label -Wshadow -std=c++11 -pedantic -Dcimg_display=0 -Ofast -mtune=generic -lm
 
 
 SOURCES += \
     ../acamera.cpp \
+    ../camevents.cpp \
     ../cbconf.cpp \
     ../httpcam.cpp \
     ../imgsink.cpp \
@@ -20,7 +20,6 @@ SOURCES += \
     ../localcam.cpp \
     ../mainn.cpp \
     ../motion.cpp \
-    ../motion_track.cpp \
     ../mpeger.cpp \
     ../rtpudpcs.cpp \
     ../rtspcam.cpp \
@@ -41,10 +40,13 @@ DISTFILES += \
     ../../../../var/www/html/stream.php \
     ../../../../var/www/html/stream2.php \
     ../../../../var/www/html/upload.php \
+    ../CMakeLists.txt \
     ../liveimage.konf
 
 HEADERS += \
+    ../CImg.h \
     ../acamera.h \
+    ../camevents.h \
     ../cbconf.h \
     ../encoder.h \
     ../encrypter.h \
@@ -54,7 +56,6 @@ HEADERS += \
     ../lilitypes.h \
     ../localcam.h \
     ../motion.h \
-    ../motion_track.h \
     ../mpeger.h \
     ../os.h \
     ../encoder.h \

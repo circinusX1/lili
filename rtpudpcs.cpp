@@ -41,7 +41,7 @@ bool rtpudpcs::ok()const
     return _ok;
 }
 
-int rtpudpcs::spin(event_t&)
+int rtpudpcs::spin()
 {
     int         rv;
     int         bytes1 = 0;

@@ -67,7 +67,7 @@ public:
     sockserver(int port, const dims_t& d, EIMG_FMT fmt);
     virtual ~sockserver();
 
-    bool spin(event_t& event);
+    bool spin();
     bool init(const dims_t&);
     bool listen();
     void close();

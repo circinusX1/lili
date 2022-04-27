@@ -89,13 +89,12 @@ bool mpeger::init(const dims_t& imgsz)
 
 
 
-uint32_t mpeger::convert420(const uint8_t* fmt420, int insz, int w,int h,
+int mpeger::fmt42_to_jpg(const uint8_t* fmt420, int w,int h,
                              const uint8_t** ppng)
 {
     AVPacket pkt;
     int  len = 0;
     int got_picture = 0;
-    (void)insz;
 
     if(_frame->data[0] == nullptr)
     {
@@ -128,11 +127,10 @@ uint32_t mpeger::convert420(const uint8_t* fmt420, int insz, int w,int h,
 }
 
 
-uint32_t mpeger::convertBW(const uint8_t* uint8buf, int insz, int w, int h, const uint8_t** pjpeg)
+int mpeger::fmt42_to_bw(const uint8_t* uint8buf, int w, int h, const uint8_t** pjpeg)
 
 {
     (void)uint8buf;
-    (void)insz;
     (void)h;
     (void)w;
     (void)pjpeg;

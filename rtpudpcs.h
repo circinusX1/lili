@@ -13,7 +13,7 @@ public:
     rtpudpcs(int port);
     virtual ~rtpudpcs();
     bool ok()const;
-    int spin(event_t& event);
+    int spin();
     const uint8_t* frame()const{ return _frame;}
 
 protected:

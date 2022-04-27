@@ -26,7 +26,7 @@ public:
     virtual void stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
                         const std::string& name, const event_t& event, EIMG_FMT eift);
     void kill();
-    virtual bool spin(event_t& event);
+    virtual bool spin();
     virtual bool init(const dims_t&);
 
 private:

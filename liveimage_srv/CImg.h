@@ -59288,33 +59288,6 @@ namespace cimg_library_suffixed {
       return _save_raw(0,filename,is_multiplexed);
     }
 
-    // mco-
-        void release_raw( unsigned char* pret) const {
-            if(_data != pret)
-                delete[] pret;
-        }
-
-            int get_raw(const unsigned char** ppret) const {
-                if (pixel_type()==cimg::type<bool>::string())
-                { // Boolean data (bitwise)
-                    ulongT siz;
-                    *ppret = _bool2uchar(siz,false);
-                    return siz;
-                }
-                if (_spectrum==1)
-                {
-                    *ppret = (const unsigned char*)_data;
-                    return size();
-                }
-                CImg<T> buf(_spectrum);
-                cimg_forXYZ(*this,x,y,z)
-                {
-                    cimg_forC(*this,c) buf[c] = (*this)(x,y,z,c);
-                }
-                *ppret = (const unsigned char*)buf._data;
-                return buf.size();
-            }
-
     //! Save image as a raw data file \overloading.
     /**
        Same as save_raw(const char *,bool) const

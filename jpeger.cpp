@@ -62,20 +62,17 @@ bool jpeger::init(const dims_t&)
     return true;
 }
 
-uint32_t jpeger::convert420(const uint8_t* fmt420, int insz,
-                            int w, int h,
+int jpeger::fmt42_to_jpg(const uint8_t* fmt420,  int w, int h,
                              const uint8_t** pjpeg)
 {
     const uint8_t* pstart = fmt420;
-    (void)insz;
     _imgsize =  _put_jpeg_yuv420p_memory(pstart, w, h, _jpgq, 0);
     *pjpeg = _image;
     return  _imgsize;
 }
 
-uint32_t jpeger::convertBW(const uint8_t* uint8buf, int insz, int w, int h, const uint8_t** pjpeg)
+int jpeger::fmt42_to_bw(const uint8_t* uint8buf, int w, int h, const uint8_t** pjpeg)
 {
-    (void)insz;
     if(_memsz)
     {
         JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */

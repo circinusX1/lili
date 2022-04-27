@@ -191,7 +191,7 @@ DONE:
     TRACE() << "socked close\r\n";
 }
 
-bool webcast::spin(event_t&)
+bool webcast::spin()
 {
     return true;
 }

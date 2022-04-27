@@ -3,9 +3,10 @@
 
 extern bool __alive;
 
-localcam::localcam(const std::string& name,
+localcam::localcam(const dims_t& wh,
+                   const std::string& name,
                    const std::string& loc,
-                   const Cbdler::Node& n):acamera(name, loc, n)
+                   const Cbdler::Node& n):acamera(wh,name, loc, n)
 {
     _device = loc;
     _img_size = CFG["image"]["img_size"].to_dims();
@@ -29,7 +30,7 @@ bool  localcam::init(const dims_t& t)
     return false;
 }
 
-size_t localcam::get_frame(const uint8_t** pb, EIMG_FMT& fmt, event_t& event)
+size_t localcam::get_frame(const uint8_t** pb, EIMG_FMT& fmt)
 {
     bool fatal = false;
     int imgsz = 0;
@@ -41,7 +42,7 @@ size_t localcam::get_frame(const uint8_t** pb, EIMG_FMT& fmt, event_t& event)
     return (size_t)imgsz;
 }
 
-bool localcam::spin(event_t&)
+bool localcam::spin()
 {
     return true;
 }

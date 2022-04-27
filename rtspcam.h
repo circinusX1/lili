@@ -28,11 +28,11 @@ class rtpudpcs;
 class rtspcam : public osthread, public acamera
 {
 public:
-    rtspcam(const std::string& name, const std::string& loc, const Cbdler::Node& n);
+    rtspcam(const dims_t& wh,const std::string& name, const std::string& loc, const Cbdler::Node& n);
     virtual ~rtspcam();
     virtual void  thread_main();
-    virtual size_t get_frame(const uint8_t** pb, EIMG_FMT& fmt, event_t& event);
-    virtual bool spin(event_t& event);
+    virtual size_t get_frame(const uint8_t** pb, EIMG_FMT& fmt);
+    virtual bool spin();
     virtual bool init(const dims_t&);
 
 private:

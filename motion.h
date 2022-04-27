@@ -32,27 +32,33 @@
 class mmotion
 {
 public:
-    mmotion(int w, int h);
+    mmotion(const dims_t& wh,  const Cbdler::Node& n);
     ~mmotion();
-    int det_mov_422(uint8_t* p, EIMG_FMT fmt);
+
     int  getw()const{return _mw;}
     int  geth()const{return _mh;}
     uint8_t*  motionbuf()const{return _motionbufs[2];}
     int darkav()const{return _dark;}
+    int det_mov(const uint8_t* p, size_t len, EIMG_FMT fmt);
+
+private:
+    int _det_mov_422(const uint8_t* p);
 
 private:
     int       _w;
     int       _h;
     int       _mw;
     int       _mh;
+    int       _motionsc = 4;
     uint8_t*  _motionbufs[3];
-    int       _motionindex;
+    int       _mobuf_idx;
     uint32_t  _motionsz;
     mutexx     _m;
     int       _moves;
     int       _dark;
     int       _noisediv=4;
     int       _mmeter;
+    int       _mdiff = 4;
     rect_t    _inrect;
     rect_t    _outrect;
 };

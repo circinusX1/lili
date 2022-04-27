@@ -14,7 +14,7 @@ public:
     virtual bool init(const dims_t&)=0;
     virtual void stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
                         const std::string& name, const event_t& event, EIMG_FMT eift)=0;
-    virtual bool spin(event_t& event) = 0;
+    virtual bool spin() = 0;
     const std::string& name()const { return _name; }
 
 protected:

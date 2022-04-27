@@ -12,9 +12,9 @@ static rtspcam* _pthis;
 
 #define OUT_STREAM  nullout
 
-rtspcam::rtspcam(const std::string& name,
+rtspcam::rtspcam(const dims_t& wh,const std::string& name,
                  const std::string& loc,
-                 const Cbdler::Node& n):acamera(name,loc,n)
+                 const Cbdler::Node& n):acamera(wh,name,loc,n)
 {
     _url = loc;
     _transport = "RTP/AVP;unicast;client_port=";
@@ -110,7 +110,7 @@ void  rtspcam::thread_main()
             this->_rtsp_play();
             while(__alive && !this->is_stopped())
             {
-                int bytes = _pudpsink->spin(ev);
+                int bytes = _pudpsink->spin();
                 if(bytes)
                 {
                     AutoLock    a(&_mut);
@@ -127,7 +127,7 @@ void  rtspcam::thread_main()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-size_t rtspcam::get_frame(const uint8_t** pb, EIMG_FMT& fmt, event_t&)
+size_t rtspcam::get_frame(const uint8_t** pb, EIMG_FMT& fmt)
 {
     size_t          leng = 0;
     AutoTryLock    a(&_mut);
@@ -264,7 +264,7 @@ void rtspcam::_get_media_control_attribute()
     }
 }
 
-bool rtspcam::spin(event_t&)
+bool rtspcam::spin()
 {
     return true;
 }

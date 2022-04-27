@@ -109,7 +109,7 @@ void sockserver::_check_and_keep(imgclient* pcli)
     }
 }
 
-bool sockserver::spin(event_t&)
+bool sockserver::spin()
 {
     fd_set  rd;
     int     ndfs = _s.socket();// _s.sock()+1;
@@ -322,8 +322,14 @@ bool sockserver::stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants
         switch(s->_needs)
         {
         case WANTS_MOTION:
-            if(wants == WANTS_MOTION && ifmt==0)
-                rv = this->_stream_jpeg(s, buff, sz);
+            if(wants == WANTS_MOTION && ifmt==0){
+                if(sz)
+                    rv = this->_stream_jpeg(s, buff, sz);
+                else{
+                    s->destroy();
+                    _dirty = true;
+                }
+            }
             break;
         case WANTS_LIVE_IMAGE:
             if((wants == WANTS_LIVE_IMAGE && ifmt==0) ||  _mpg_multi_part) // streams mpg as jpg

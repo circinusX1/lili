@@ -45,8 +45,11 @@ struct Nullout
 
 extern Nullout     nullout;
 
+#ifdef QTPRO
+#define TRACE()   std::cerr
+#else
 #define TRACE()   std::cout
-
+#endif
 
 struct rect_t{
     int x;
