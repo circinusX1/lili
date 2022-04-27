@@ -157,7 +157,7 @@ bool v4ldevice::open()
             TRACE() << "error set frame interval " << _fps << "\n";
         }
         _fps = fint.parm.capture.timeperframe.denominator;
-        TRACE() << "FPS: recalculated duet camera limitations at: " << _fps << "\n";
+        TRACE() << "FPS: recalculated due to camera limitations at: " << _fps << "\n";
     }
     uint32_t wmin = frmt.fmt.pix.width * 2;
     if (frmt.fmt.pix.bytesperline < wmin)

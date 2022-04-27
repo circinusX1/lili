@@ -1,3 +1,5 @@
+#ifdef WITH_RTSP
+
 #ifndef RTSPCAM_H
 #define RTSPCAM_H
 
@@ -94,3 +96,9 @@ private:
 
 
 #endif // RTSPCAM_H
+
+#else// WITH_RTSP
+
+#warning "RTSP EXPERIMENTAL FEATURE IS DISABLED Use -DWITH_RTSP"
+
+#endif

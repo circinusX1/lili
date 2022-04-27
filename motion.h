@@ -48,7 +48,7 @@ private:
     uint8_t*  _motionbufs[3];
     int       _motionindex;
     uint32_t  _motionsz;
-    mutex     _m;
+    mutexx     _m;
     int       _moves;
     int       _dark;
     int       _noisediv=4;
