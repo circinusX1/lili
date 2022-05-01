@@ -16,28 +16,27 @@
     Author:  Marius O. Chincisan
     First Release: September 16 - 29 2016
 */
-#ifndef JPEGER_H
-#define JPEGER_H
+#ifndef FXXTOJPG_H
+#define FXXTOJPG_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <string>
-#include "encoder.h"
 #include <time.h>
 #include <jpeglib.h>
-
 #include <jerror.h>
+#include "cbconf.h"
 
-class jpeger : public encoder
+class jpeger
 {
 public:
     jpeger(int q, bool bw);
     virtual ~jpeger();
     bool init(const dims_t&);
-    int fmt42_to_jpg(const uint8_t* fmt420, int w,int h, const uint8_t** pjpeg);
-    int fmt42_to_bw(const uint8_t* uint8buf, int w, int h, const uint8_t** pjpeg);
+    int cam_to_jpg(imglayout_t& img);
+    int cam_to_bw(imglayout_t& img);
 
 private:
 	int _put_jpeg_yuv420p_memory(const uint8_t *pyuv420,int width, int height, int jpg_quality, struct tm *tm);
@@ -53,4 +52,4 @@ public:
     struct          jpeg_error_mgr _jerr;
 };
 
-#endif // JPEGER_H
+#endif // FXXTOJPG_H

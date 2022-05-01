@@ -39,10 +39,12 @@ public:
     int  geth()const{return _mh;}
     uint8_t*  motionbuf()const{return _motionbufs[2];}
     int darkav()const{return _dark;}
-    int det_mov(const uint8_t* p, size_t len, EIMG_FMT fmt);
+    int det_mov(const imglayout_t& imgl);
 
 private:
-    int _det_mov_422(const uint8_t* p);
+    int _det_mov_422(const imglayout_t& imgl);
+    void _meter_show(uint8_t* pSeen);
+    void _calc_rects(int w, int h);
 
 private:
     int       _w;
@@ -50,10 +52,10 @@ private:
     int       _mw;
     int       _mh;
     int       _motionsc = 4;
-    uint8_t*  _motionbufs[3];
+    uint8_t*  _motionbufs[3] = {nullptr, nullptr,nullptr};
     int       _mobuf_idx;
-    uint32_t  _motionsz;
-    mutexx     _m;
+    int       _motionsz;
+    mutexx    _m;
     int       _moves;
     int       _dark;
     int       _noisediv=4;
@@ -61,6 +63,7 @@ private:
     int       _mdiff = 4;
     rect_t    _inrect;
     rect_t    _outrect;
+    bool      _recalc = false;
 };
 
 

@@ -18,7 +18,7 @@
 */
 #include <iostream>
 #include <assert.h>
-#include "jpeger.h"
+#include "fxxtojpg.h"
 #include "cbconf.h"
 
 
@@ -62,16 +62,17 @@ bool jpeger::init(const dims_t&)
     return true;
 }
 
-int jpeger::fmt42_to_jpg(const uint8_t* fmt420,  int w, int h,
-                             const uint8_t** pjpeg)
+int jpeger::cam_to_jpg(imglayout_t& img)
 {
-    const uint8_t* pstart = fmt420;
-    _imgsize =  _put_jpeg_yuv420p_memory(pstart, w, h, _jpgq, 0);
-    *pjpeg = _image;
+    const uint8_t* pstart = img._camp;
+    _imgsize =  _put_jpeg_yuv420p_memory(pstart, img._dims.x, img._dims.y, _jpgq, 0);
+    img._jpgp = _image;
+    img._jpgl = _imgsize;
+    img._jpgf = eFJPG;
     return  _imgsize;
 }
 
-int jpeger::fmt42_to_bw(const uint8_t* uint8buf, int w, int h, const uint8_t** pjpeg)
+int jpeger::cam_to_bw(imglayout_t& img)
 {
     if(_memsz)
     {
@@ -80,8 +81,8 @@ int jpeger::fmt42_to_bw(const uint8_t* uint8buf, int w, int h, const uint8_t** p
 
         memset(_image,0xFF,_memsz);
 
-        _cinfo.image_width = w;
-        _cinfo.image_height = h;
+        _cinfo.image_width = img._dims.x;
+        _cinfo.image_height = img._dims.y;
         _cinfo.input_components = 1;
         _cinfo.in_color_space = JCS_GRAYSCALE;
         jpeg_set_defaults(&_cinfo);
@@ -89,17 +90,19 @@ int jpeger::fmt42_to_bw(const uint8_t* uint8buf, int w, int h, const uint8_t** p
         _cinfo.dct_method = JDCT_FASTEST;
         jpeg_set_quality(&_cinfo, 80, TRUE);
         jpeg_start_compress(&_cinfo, TRUE);
-        row_stride = w ;
+        row_stride = img._dims.x ;
 
         while (_cinfo.next_scanline < _cinfo.image_height)
         {
-            row_pointer[0] = (unsigned char*)&uint8buf[_cinfo.next_scanline * row_stride];
+            row_pointer[0] = (unsigned char*)&img._camp[_cinfo.next_scanline * row_stride];
             (void) jpeg_write_scanlines(&_cinfo, row_pointer, 1);
         }
 
         jpeg_finish_compress(&_cinfo);
         int jpeg_imgsz = _jpeg_mem_size(&_cinfo);
-        *pjpeg = _image;
+        img._jpgp = _image;
+        img._jpgl = jpeg_imgsz;
+        img._jpgf = eFJPG;
         return jpeg_imgsz;
     }
     return 0;

@@ -1,6 +1,4 @@
-RTSP/1.0 200 OK
-CSeq: 2
+RTSP/1.0 400 Bad Request
+CSeq: 4
 Server: TAS-Tech Streaming Server V100R001
-Content-Type: application/sdp
-Content-length: 315
 

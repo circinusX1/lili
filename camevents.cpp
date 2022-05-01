@@ -37,12 +37,12 @@ camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
 
 }
 
-int camevents::_proc_events(const uint8_t* buff, size_t len, EIMG_FMT fmt)
+int camevents::_proc_events(const imglayout_t& imgl)
 {
     if(_mt)
     {
-        if(fmt==e422){
-            int movedpix =  _mt->det_mov((uint8_t*)buff, len, fmt);
+        if(imgl._camf==e422){
+            int movedpix =  _mt->det_mov(imgl);
             if(movedpix > _mohilo.x && movedpix < _mohilo.y)
             {
                 return uint8_t(movedpix);
@@ -66,16 +66,14 @@ const uint8_t* camevents::getm(int& w, int& h, int& sz)
 }
 
 
-void camevents::proc_events(const imglayout_t& img)
+const event_t&  camevents::proc_events(const imglayout_t& imgl)
 {
-    if(_mt==nullptr){
-        return;
-    }
     uint32_t now =  gtc();
-
     if(now - _tickmove > _inertiiaitl)
     {
-        _event.movepix = _mt->det_mov(img._camp, img._caml, img._camf);
+        if(_mt){
+            _event.movepix = _mt->det_mov(imgl);
+        }
 
         if( _event.movepix )
         {
@@ -108,7 +106,7 @@ void camevents::proc_events(const imglayout_t& img)
         }
     }
 
-    if(_mt->darkav() < _dark_lapse)
+    if(_mt && _mt->darkav() < _dark_lapse)
     {
         _event.predicate &= ~EVT_TLAPSE;
         _event.predicate &= ~EVT_MOTION;
@@ -124,7 +122,7 @@ void camevents::proc_events(const imglayout_t& img)
     {
         char fname[256];
 
-        if(img._camf == eFMPG)
+        if(imgl._camf == eNOTJPG)
         {
             if(time(0) - _mpgnewfile > 3600*24)  /*every day*/
             {
@@ -144,7 +142,7 @@ void camevents::proc_events(const imglayout_t& img)
                 {
                     ::fseek(pff,0,SEEK_END);
                     flen = ::ftell(pff);
-                    ::fwrite(img._camp,1,img._caml,pff);
+                    ::fwrite(imgl._camp,1,imgl._caml,pff);
                     ::fclose(pff);
                 }
                 if(flen > (long) (1000000 * _max_size)){
@@ -152,7 +150,7 @@ void camevents::proc_events(const imglayout_t& img)
                 }
             }
         }
-        else if(img._jpgf == eFJPG)
+        else if(imgl._jpgf == eFJPG)
         {
             ::sprintf(fname, "%si%04d-%06d.jpg", _save_loc.c_str(),_event.movepix, _firstimage);
             ++_firstimage;
@@ -160,7 +158,7 @@ void camevents::proc_events(const imglayout_t& img)
             FILE* 		pff = ::fopen(fname,"wb");
             if(pff)
             {
-                ::fwrite(img._jpgp,1,img._jpgl,pff);
+                ::fwrite(imgl._jpgp,1,imgl._jpgl,pff);
                 ::fclose(pff);
                 TRACE() << "saving: " << fname << "\n";
                 ::symlink(fname,"tmp/lastimage.jpg");
@@ -168,6 +166,7 @@ void camevents::proc_events(const imglayout_t& img)
             }
         }
     }
+    return _event;
 }
 
 

@@ -31,7 +31,7 @@ THIS SOFTWARE.
 #include <utility>
 #include <sstream>
 #include <fstream>
-
+#include "lilitypes.h"
 
 struct Nullout
 {
@@ -51,17 +51,7 @@ extern Nullout     nullout;
 #define TRACE()   std::cout
 #endif
 
-struct rect_t{
-    int x;
-    int y;
-    int X;
-    int Y;
-};
 
-struct dims_t{
-    int x;
-    int y;
-};
 
 
 class Cbdler

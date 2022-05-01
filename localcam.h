@@ -11,7 +11,7 @@ class localcam : public acamera
 public:
     localcam(const dims_t& wh,const std::string& name, const std::string& loc, const Cbdler::Node& n);
     virtual ~localcam();
-    virtual size_t get_frame(const uint8_t** pb, EIMG_FMT& fmt);
+    virtual size_t get_frame(imglayout_t& i);
     virtual bool spin();
     virtual bool init(const dims_t&);
 

@@ -1,16 +1,16 @@
-#ifndef HTTPCAM_H
-#define HTTPCAM_H
+#ifndef JPEGHTTPCAM_H
+#define JPEGHTTPCAM_H
 
 #include "os.h"
 #include "lilitypes.h"
 #include "acamera.h"
 
-class httpcam : public acamera, public osthread
+class jpeghttpcam : public acamera, public osthread
 {
 public:
-    httpcam(const dims_t& wh, const std::string& name, const std::string& loc, const Cbdler::Node& n);
-    virtual ~httpcam();
-    virtual size_t get_frame(const uint8_t** pb, EIMG_FMT& fmt);
+    jpeghttpcam(const dims_t& wh, const std::string& name, const std::string& loc, const Cbdler::Node& n);
+    virtual ~jpeghttpcam();
+    virtual size_t get_frame(imglayout_t& i);
     virtual bool spin();
     virtual bool init(const dims_t&);
     virtual void thread_main();
@@ -28,4 +28,4 @@ private:
     int             _msleep = 1000;
 };
 
-#endif // HTTPCAM_H
+#endif // JPEGHTTPCAM_H

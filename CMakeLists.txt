@@ -9,20 +9,22 @@ PROJECT(liveimage)
 
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
-add_definitions(-Dcimg_display=0 -Dcimg_use_jpeg  -Dcimg_display=0)
+add_definitions(-Dcimg_display=0 -Dcimg_use_jpeg  -Dcimg_display=0 -DWITH_RTSP_NONO)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Wall -fpermissive -fstack-protector-all -g -O0")
 add_executable (liveimage
 acamera.cpp
+pipefile.cpp
 cbconf.cpp
-httpcam.cpp
+jpeghttpcam.cpp
+jencoder.cpp
 imgsink.cpp
-jpeger.cpp
+fxxtojpg.cpp
 localcam.cpp
 mainn.cpp
 motion.cpp
 camevents.cpp
-mpeger.cpp
+anytojpg.cpp
 rtpudpcs.cpp
 rtspcam.cpp
 sock.cpp
