@@ -36,8 +36,8 @@ public:
     mpeger(int q, bool bw);
     virtual ~mpeger();
     bool init(const dims_t& imgsz);
-    int fmt42_to_jpg(const uint8_t* fmt420, int w,int h, const uint8_t** ppng);
-    int fmt42_to_bw(const uint8_t* uint8buf, int w, int h,  const uint8_t** pjpeg);
+    uint32_t convert420(const uint8_t* fmt420, int insz, int w,int h, const uint8_t** ppng);
+    uint32_t convertBW(const uint8_t* uint8buf, int insz, int w, int h,  const uint8_t** pjpeg);
 
 private:
 

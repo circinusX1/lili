@@ -5,7 +5,7 @@
 #include "sock.h"
 #include "lilitypes.h"
 
-#define MAX_BUFF   (1024*4)
+#define MAX_BUFF   (4046)
 
 class rtpudpcs
 {

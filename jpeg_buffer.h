@@ -224,7 +224,7 @@ static unsigned jpeg_mem_size(j_compress_ptr cinfo) {
    \param buffer Memory buffer containing the jpeg-coded image data.
    \param buffer_size Size of the memory buffer, in bytes.
 **/
-static CImg get_load_jpeg_buffer(const JOCTET *const buffer, const unsigned buffer_size) {
+static CImg get_load_jpeg_buffer(const JOCTET *const buffer, const unsigned buffer_size, int& comps) {
   struct jpeg_decompress_struct cinfo;
   struct jpeg_error_mgr jerr;
   cinfo.err = jpeg_std_error(&jerr);
@@ -242,6 +242,7 @@ static CImg get_load_jpeg_buffer(const JOCTET *const buffer, const unsigned buff
     jpeg_read_scanlines(&cinfo,row_pointer,1);
   }
   jpeg_finish_decompress(&cinfo);
+  comps = cinfo.output_components;
   jpeg_destroy_decompress(&cinfo);
 
   CImg<T> dest(cinfo.output_width,cinfo.output_height,1,cinfo.output_components);
@@ -285,8 +286,8 @@ static CImg get_load_jpeg_buffer(const JOCTET *const buffer, const unsigned buff
    \param buffer Memory buffer containing the jpeg-coded image data.
    \param buffer_size Size of the memory buffer, in bytes.
 **/
-CImg& load_jpeg_buffer(const JOCTET *const buffer, const unsigned buffer_size) {
-  return get_load_jpeg_buffer(buffer,buffer_size).move_to(*this);
+CImg& load_jpeg_buffer(const JOCTET *const buffer, const unsigned buffer_size, int& comps) {
+  return get_load_jpeg_buffer(buffer,buffer_size, comps).move_to(*this);
 }
 
 //! Save image in a memory buffer, directly as a jpeg-coded file

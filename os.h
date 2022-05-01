@@ -193,7 +193,7 @@ public:
 
 class AutoTryLock
 {
-    int _err = false;
+    int _err = 0;
 public:
     AutoTryLock(mutexx* m):_mutex(m)
     {
@@ -203,6 +203,7 @@ public:
     {
          _err = _mutex->try_lock();
     }
+    bool locked()const{return _err==0;}
     ~AutoTryLock()
     {
         if(0==_err)

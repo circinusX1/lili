@@ -1,26 +1,32 @@
 QT -= gui
 QT -= core
-
-CONFIG += c++11 console
-CONFIG -= app_bundle
 #QMAKE_LFLAGS += -no-pie
+
+CONFIG += c++14 console
+CONFIG -= app_bundle
 DEFINES += cimg_use_jpeg
 DEFINES += cimg_display=0
-DEFINED += QTPRO
+# DEFINES += QTPRO WITH_RTSP
+INCLUDEPATH += ../rtsp_class
+INCLUDEPATH += ../
+INCLUDEPATH += ./
+
 # QMAKE_CFLAGS += -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label -Wshadow -std=c++11 -pedantic -Dcimg_display=0 -Ofast -mtune=generic -lm
 
 
 SOURCES += \
     ../acamera.cpp \
+    ../anytojpg.cpp \
     ../camevents.cpp \
     ../cbconf.cpp \
-    ../httpcam.cpp \
+    ../fxxtojpg.cpp \
     ../imgsink.cpp \
-    ../jpeger.cpp \
+    ../jpeghttpcam.cpp \
     ../localcam.cpp \
+    ../jencoder.cpp \
     ../mainn.cpp \
     ../motion.cpp \
-    ../mpeger.cpp \
+    ../pipefile.cpp \
     ../rtpudpcs.cpp \
     ../rtspcam.cpp \
     ../sock.cpp \
@@ -41,24 +47,28 @@ DISTFILES += \
     ../../../../var/www/html/stream2.php \
     ../../../../var/www/html/upload.php \
     ../CMakeLists.txt \
-    ../liveimage.konf
+    ../liveimage.konf \
+    ../liveimage.sample_konf
 
 HEADERS += \
     ../CImg.h \
     ../acamera.h \
+    ../anytojpg.h \
     ../camevents.h \
     ../cbconf.h \
-    ../encoder.h \
     ../encrypter.h \
-    ../httpcam.h \
+    ../fxxtojpg.h \
     ../imgsink.h \
-    ../jpeger.h \
+    ../jencoder.cpp \
+    ../jencoder.h \
+    ../jencoder.h \
+    ../jpeg_buffer.h \
+    ../jpeghttpcam.h \
     ../lilitypes.h \
     ../localcam.h \
     ../motion.h \
-    ../mpeger.h \
     ../os.h \
-    ../encoder.h \
+    ../pipefile.h \
     ../rtpudpcs.h \
     ../rtspcam.h \
     ../sock.h \
@@ -66,6 +76,36 @@ HEADERS += \
     ../strutils.h \
     ../v4ldevice.h \
     ../webcast.h
+
+
+LIBS +=  -lpthread  -lv4l2 -ljpeg -ldl
+# -lavdevice - -lavformat -lavcodec -lavutil
+LIBS += -L$$usr/lib/x86_64-linux-gnu
+
+
+HEADERS += \
+    ../CImg.h \
+    ../acamera.h \
+    ../anytojpg.h \
+    ../camevents.h \
+    ../cbconf.h \
+    ../encrypter.h \
+    ../fxxtojpg.h \
+    ../imgsink.h \
+    ../jencoder.cpp \
+    ../jencoder.h \
+    ../jpeghttpcam.h \
+    ../lilitypes.h \
+    ../localcam.h \
+    ../motion.h \
+    ../os.h \
+    ../rtpudpcs.h \
+    ../rtspcam.h \
+    ../sock.h \
+    ../sockserver.h \
+    ../strutils.h \
+    ../v4ldevice.h \
+    ../webcast.h \
 
 
 LIBS +=  -lpthread  -lv4l2 -ljpeg -ldl

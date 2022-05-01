@@ -9,7 +9,6 @@
 #include "os.h"
 #include "webcast.h"
 #include "acamera.h"
-#include "pipefile.h"
 
 #define VF_LEN      8912
 #define VF_LEN_ADD  1024
@@ -32,19 +31,18 @@ public:
     rtspcam(const dims_t& wh,const std::string& name, const std::string& loc, const Cbdler::Node& n);
     virtual ~rtspcam();
     virtual void  thread_main();
-    virtual size_t get_frame(imglayout_t& i);
+    virtual size_t get_frame(const uint8_t** pb, EIMG_FMT& fmt);
     virtual bool spin();
     virtual bool init(const dims_t&);
 
 private:
-    int _perform();
+    void _perform();
     void _get_sdp_filename();
     void _rtsp_describe();
     void _get_media_control_attribute();
     void _rtsp_setup();
     void _rtsp_play();
     void _rtsp_teardown();
-    void _auth();
 
     static size_t _read_callback(char *ptr, size_t size, size_t nmemb, void *ud);
     static size_t _write_callback(char *ptr, size_t size, size_t nmemb, void *ud);
@@ -65,7 +63,6 @@ private:
 
     std::string             _name;
     std::string             _url;
-    std::string             _uri;
     std::string             _user;
     std::string             _pass;
     std::string             _transport;
@@ -84,7 +81,6 @@ private:
     bool                    _ontcp = false;
     rtspcam*                _pthis = nullptr;
     size_t                  _gotbytes = 0;
-    pipiefile*              _pif = nullptr;
 };
 
 #define CU_SET(A, B, C)                               \
@@ -102,16 +98,6 @@ private:
       fprintf(stderr, "curl_easy_perform(%s) failed: %d\n", #A, res);   \
   } while(0)
 
-
-
-struct __attribute__((__packed__)) frmsep_t{
-    uint32_t    len;
-    uint32_t    magic;
-    uint16_t     ffd8;
-    uint16_t    ffeo;
-    uint16_t    oo1o;
-    char        jfif[4];
-};
 
 #endif // RTSPCAM_H
 

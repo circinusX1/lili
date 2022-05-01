@@ -26,9 +26,9 @@ const uint8_t* acamera::getm(int& w, int& h, int& sz)
     return _mt.getm(w,h,sz);
 }
 
-void acamera::proc_events(const imglayout_t& img)
+const event_t&  acamera::proc_events(const imglayout_t& img)
 {
-    _mt.proc_events(img);
+    return _mt.proc_events(img);
 }
 
 void  acamera::clean_events()

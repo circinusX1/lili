@@ -114,10 +114,10 @@ void webcast::_go_streaming(const char* host, int port)
     {
         _s.set_blocking(1);
         if(_s.try_connect(host, port)){
-            TRACE() << "cam connected "<< host << port <<"\r\n";
+            ;//TRACE() << "cam connected "<< host << port <<"\r\n";
         }
         else{
-            TRACE() << "cam cannot connect "<< host << port <<"\r\n";
+            //TRACE() << "cam cannot connect "<< host << port <<"\r\n";
             goto DONE;
         }
         if(_s.isopen())
@@ -172,7 +172,6 @@ void webcast::_go_streaming(const char* host, int port)
                     }else{
                         noframe += frm_intl;
                     }
-                    TRACE() << "sent " << _hdr.len << "\n" ;
                     _hdr.len = 0;
                 }while(0);
 END_WILE:
@@ -188,7 +187,7 @@ DONE:
     AutoLock a(&_mut);
     _hdr.len  = 0;
     _s.destroy();
-    TRACE() << "socked close\r\n";
+    //TRACE() << "socked close\r\n";
 }
 
 bool webcast::spin()

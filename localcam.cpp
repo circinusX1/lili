@@ -30,15 +30,18 @@ bool  localcam::init(const dims_t& t)
     return false;
 }
 
-size_t localcam::get_frame(const uint8_t** pb, EIMG_FMT& fmt)
+size_t localcam::get_frame(imglayout_t& i)
 {
     bool fatal = false;
     int imgsz = 0;
-    *pb = _dev->read(_img_size.x, _img_size.y, imgsz, fatal);
+    i._camp = _dev->read(_img_size.x, _img_size.y, imgsz, fatal);
     if(fatal || imgsz==0){
         return 0;
     }
-    fmt = e422;
+    i._camf = e422;
+    i._dims.x = _img_size.x;
+    i._dims.y = _img_size.y;
+    i._caml = imgsz;
     return (size_t)imgsz;
 }
 

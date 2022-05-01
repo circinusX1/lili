@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#define     INITIAL_LEN     4096
-#define     STEP_LEN        1024
+#define     INITIAL_LEN     16386
+#define     STEP_LEN        4096
 
 
 #define          PACK_ALIGN_1   __attribute__((packed, aligned(1)))
@@ -27,32 +27,42 @@ public:
         *pb = buf;
         return len;
     }
-    void realloc(size_t nlen){
+    bool realloc(size_t nlen){
         if(nlen > cap){
-            delete[] buf;
-            cap = ((nlen/STEP_LEN)+1)*STEP_LEN;
-            buf = new uint8_t[cap];
-            assert(buf);
-            len=0;
+            size_t newcap = ((nlen/STEP_LEN)+1)*STEP_LEN;
+            uint8_t* pnewbuf = new uint8_t[newcap];
+            if(pnewbuf){
+                if(len){
+                    ::memcpy(pnewbuf, buf, len);
+                }
+                delete[] buf;
+                cap = newcap;
+                return true;
+            }
+            return  false;
         }
-
+        return true;
     }
     void copy(const uint8_t* p, size_t off, size_t nlen)
     {
+        bool real=true;
         if(nlen > cap){
-            delete[] buf;
-            cap = ((nlen/STEP_LEN)+1)*STEP_LEN;
-            buf = new uint8_t[cap];
-            assert(buf);
+            real=realloc(nlen);
         }
-        ::memcpy(buf+off, p, nlen);
-        len = nlen;
+        if(real){
+            ::memcpy(buf+off, p, nlen);
+            len = nlen;
+        }else{
+            len=0;
+        }
     }
     void    set_len(size_t l){len=l;}
     size_t  length()const{return len;}
     size_t  capa()const{return cap;}
     void    reset(){len=0;};
-    uint8_t*     buffer(int off=0){return buf+off;}
+    uint8_t*     buffer(int off=0){
+        return buf+off;
+    }
 private:
     uint8_t* buf=nullptr;
     size_t  cap=0;
@@ -60,7 +70,7 @@ private:
 };
 
 
-enum EIMG_FMT{eFJPG, eFMPG, e422};
+enum EIMG_FMT{eNONE=-1, eFJPG=0, eNOTJPG, e422};
 
 
 #define JPEG_MAGIC        0x12345678
@@ -96,6 +106,33 @@ struct  LiFrmHdr{
     uint8_t     challange[16];
     char        camname[16];
 }PACK_ALIGN_1;
+
+inline bool is_jpeg(const uint8_t* pb, int len){
+    return len>10 && pb[0]==0xFF && pb[6]=='J' && pb[9]=='F';
+}
+
+struct rect_t{
+    int x;
+    int y;
+    int X;
+    int Y;
+};
+
+struct dims_t{
+    int x;
+    int y;
+};
+
+struct imglayout_t{
+    imglayout_t(){::memset(this,0,sizeof(*this));}
+    const uint8_t *_camp = nullptr;
+    size_t         _caml = 0;
+    EIMG_FMT       _camf = e422;
+    const uint8_t *_jpgp = nullptr;
+    size_t         _jpgl = 0;
+    EIMG_FMT       _jpgf = eFJPG;
+    dims_t         _dims = {0,0};
+};
 
 
 #endif

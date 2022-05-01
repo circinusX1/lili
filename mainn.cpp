@@ -32,15 +32,16 @@
 
 #include "v4ldevice.h"
 #include "sockserver.h"
-#include "jpeger.h"
-#include "mpeger.h"
+#include "fxxtojpg.h"
+#include "anytojpg.h"
 #include "cbconf.h"
 #include "rtspcam.h"
 #include "localcam.h"
-#include "httpcam.h"
+#include "jpeghttpcam.h"
 #include "webcast.h"
 #include "lilitypes.h"
 #include "camevents.h"
+#include "jencoder.h"
 /*
 sudo apt-get install libv4l-dev libjpeg-dev
 */
@@ -104,7 +105,7 @@ void kapture()
     event_t                 loopevent;
     std::vector<acamera*>   cameras;
     sockserver*             pserver     = nullptr;
-    encoder*                pencoder    = nullptr;
+    jencoder                 encode(jquality,  bw_image);
 
     int local_server_port = CFG["server"]["port"].to_int();
     if(local_server_port){
@@ -146,7 +147,7 @@ void kapture()
             }
         }
 
-        acamera* pc;
+        acamera* pc = nullptr;
         if(!url.empty())
         {
 #ifdef WITH_RTSP
@@ -155,34 +156,34 @@ void kapture()
             else
 #endif
                 if(url.find("http")!=(size_t)-1)
-                    pc = new httpcam(img_size, name, url, pd);
-                else
+                    pc = new jpeghttpcam(img_size, name, url, pd);
+                else{
                     TRACE() << "NO CAM CONFIGURED\n";
+                }
 
         }
         else if(!dev.empty())
         {
             pc = new localcam(img_size, name, dev, pd);
         }
-        pc->set_flag(flag);
-        std::string swebcast = CFG["webcast"]["server"].value();
-        if(!swebcast.empty())
-        {
-            imgsink* ps = new webcast(name);
-            ps->init(img_size);
-            pc->set_peer(ps);
+        if(pc==nullptr){
+            __alive = 0;
+        }else{
+            std::string swebcast = CFG["webcast"]["server"].value();
+            if(!swebcast.empty())
+            {
+                imgsink* ps = new webcast(name);
+                ps->init(img_size);
+                pc->set_peer(ps);
+            }
+            pc->init(img_size);
+            cameras.push_back(pc);
+            if(pserver)
+                pserver->reg_cam(pc->name());
         }
-        pc->init(img_size);
-        cameras.push_back(pc);
-        if(pserver)
-            pserver->reg_cam(pc->name());
     }
 
-    if(img_format == eFJPG){
-        pencoder = new jpeger(jquality, bw_image);
-    }else{
-        pencoder = new mpeger(jquality, bw_image);
-    }
+    encode.init(img_size);
 
     while(__alive && 0 == ::usleep(10000))
     {
@@ -192,16 +193,13 @@ void kapture()
         for(auto &ap : cameras)
         {
             acamera* p = ap;
-            image._caml = p->get_frame(&image._camp, image._camf);
+            image._caml = 0;
+            p->get_frame(image);
             if(image._caml)
             {
-                if(image._camf == e422)
+                if(image._camf == e422 || image._camf == eNOTJPG)
                 {
-                    image._jpgl = pencoder->fmt42_to_jpg(image._camp,
-                                                     img_size.x,
-                                                     img_size.y,
-                                                     &image._jpgp);
-                    image._jpgf = eFJPG;
+                    encode.cam_to_jpg(image);
                 }
                 else
                 {
@@ -209,8 +207,7 @@ void kapture()
                     image._jpgp = image._camp;
                     image._jpgl = image._caml;
                 }
-                loopevent = p->get_flag();
-                p->proc_events(image);
+                loopevent = p->proc_events(image);
                 if(p->peer())
                 {
                     p->peer()->stream(image._jpgp, image._jpgl, img_size, p->name(), loopevent, image._jpgf);
@@ -228,10 +225,15 @@ void kapture()
                         const uint8_t*  mot = p->getm(w, h, sz);
                         if(mot)
                         {
-                            const uint8_t* pjpg = 0;
-                            int jpgsz = pencoder->fmt42_to_bw(mot, w, h, &pjpg);
+                            imglayout_t imly;
+                            imly._camp=mot;
+                            imly._caml=sz;
+                            imly._camf=e422;
+                            imly._dims.x=w;
+                            imly._dims.y=h;
+                            int jpgsz = encode.cam_to_bw(imly);
                             if(jpgsz){
-                                pserver->stream_on(pjpg, jpgsz, eFJPG, wants);
+                                pserver->stream_on(imly._jpgp, imly._jpgl, imly._jpgf, wants);
                             }
                         }else{
                             pserver->stream_on(nullptr, 0, eFJPG, wants);
@@ -248,6 +250,6 @@ void kapture()
     for(auto& a: cameras){
         delete a;
     }
-    delete pencoder;
+
 }
 

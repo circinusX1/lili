@@ -11,27 +11,19 @@
 #define FLAG_SAVE       0x8
 #define FLAG_FORCE_SAVE  0x10
 
-struct imglayout_t{
-    const uint8_t *_camp = nullptr;
-    size_t         _caml = 0;
-    EIMG_FMT       _camf = e422;
-    const uint8_t *_jpgp = nullptr;
-    size_t         _jpgl = 0;
-    EIMG_FMT       _jpgf = eFJPG;
-};
 
 class camevents
 {
 public:
     camevents(const dims_t& wh, const Cbdler::Node& n);
 
-    void proc_events(const imglayout_t& cam);
+    const event_t&  proc_events(const imglayout_t& cam);
     const uint8_t* getm(int& w, int& h, int& sz);
     void clean_events();
 
 private:
     int _darkaverage()const{return _mt ?  _mt->darkav() : 0;}
-    int _proc_events(const uint8_t* buff, size_t len, EIMG_FMT fmt);
+    int _proc_events(const imglayout_t& imgl);
 
 private:
     mmotion*    _mt             = nullptr;

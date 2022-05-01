@@ -20,7 +20,7 @@
 #include <iostream>
 #include <fcntl.h>
 #include "sockserver.h"
-#include "encoder.h"
+#include "jencoder.h"
 #include "cbconf.h"
 
 #include "strutils.h"
@@ -218,8 +218,8 @@ bool sockserver::spin()
                                 r+="</ul>";
                             }
                             int lrsp = ::snprintf(req,sizeof(req),HEADER_200,(int)r.length());
-                            s->send(req,lrsp);
-                            s->send(r.c_str(), r.length());
+                            if(s->send(req,lrsp)>0)
+                                s->send(r.c_str(), r.length());
                             s->destroy();
                             _dirty = true;
                             TRACE() << "RSPONSE[" << r << "]\n";
@@ -285,7 +285,7 @@ void sockserver::_send_page(imgclient* pc, int ifmt)
     char  image[512];
     char  html[1024];
     int len;
-    if(ifmt==0)
+    if(ifmt==eFJPG)
     {
         len = ::sprintf(image,
                         "<img width='640' src='http://%s/?stream&%s' />",_host.c_str(), pc->_camname.c_str());
@@ -332,7 +332,8 @@ bool sockserver::stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants
             }
             break;
         case WANTS_LIVE_IMAGE:
-            if((wants == WANTS_LIVE_IMAGE && ifmt==0) ||  _mpg_multi_part) // streams mpg as jpg
+            if((wants == WANTS_LIVE_IMAGE && ifmt==eFJPG) ||
+                _mpg_multi_part) // streams mpg as jpg
                 rv = this->_stream_jpeg(s, buff, sz);
             else
                 rv = this->_stream_video(s, buff, sz);
@@ -389,7 +390,7 @@ bool sockserver::_stream_jpeg(imgclient* pc, const uint8_t* buff,
         pc->_headered = false;
         return false;
     }
-    rv = pc->sendall(buff,sz,1000);
+    rv = pc->sendall(buff,sz,4000);
     if(rv==0)
     {
         pc->destroy();

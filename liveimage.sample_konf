@@ -1,62 +1,114 @@
 ###################### experimental img_format ######################
-# only if /usr/lib/x86_64-linux-gnu/lib_av.so  is provided. 
-# DEFAULT                   0  JPG
-#AV_CODEC_ID_MPEG1VIDEO     1,
-#AV_CODEC_ID_MPEG2VIDEO     2, ///< preferred ID for MPEG-1/2 video decoding
-#AV_CODEC_ID_H261           3,
-#AV_CODEC_ID_H263           4,
-#AV_CODEC_ID_MPEG4,         12
-#AV_CODEC_ID_H264,          27
-##########################################################
+# chars to escape in a string between " with \ are : = " @
+# only if /usr/lib/x86_64-linux-gnu/lib_av.so  is provided.
+# img_format  DEFAULT    0  JPG
+######################################################### experimental
+#AV_CODEC_ID_MPEG1VIDEO  1
+#AV_CODEC_ID_MPEG2VIDEO  2 ///< preferred ID for MPEG-1/2 video decoding
+#AV_CODEC_ID_H261        3
+#AV_CODEC_ID_H263        4
+#AV_CODEC_ID_MPEG4,      12
+#AV_CODEC_ID_H264,       27
+#####################################################################
 {
-    I{
-        device      {/dev/video*}
-
-        fps         {30}            # not used
-        jpg_quality {80}
-        bw_image    {1}             # makes jpg B&W to save bandwidth for webcast
-        img_size    {640,480}
-        img_format  {0}             # 0 jpg
-        flip        {0}
-        max_files   {8912}          # rolls over
-        max_size    {200}           # when using lib_av
-        save_loc    {/data/snaps/}  # crate this in advance
-#       lib_av      {/usr/lib/x86_64-linux-gnu/lib_av.so} # if is not specified the mpeger is disabled (EXPERIMENTAL)
-        lib_av      {}              # is disabled (EXPERIMENTAL)
+    image{                                  # image settings
+        img_size         {640,480}          #
+        bw_image         {1}                # jpeg would make a b&w
+        jpg_quality      {80}               # jpeg would use 80% quality
+        img_format       {0}                # 0 jpg
+        lib_av           {/usr/lib/x86_64-linux-gnu/libavcodec.so}   # if the img format is !=0 TODO
+        lib_curl         {/usr/lib/x86_64-linux-gnu/libcurl.so}      # if there are any rtsp cameras
     }
 
-    move{
-        motion      {10,600}            # changed pixels range for movement, 0,0 to disable
-        motion_diff {20}                # frame pixels change to detect motion
-        noise_div   {8}                 # lower -> higher noise, (2...32)
-        in_rect     {121,66,421,419}    # motion in detection in within img_size
-        out_rect    {3,329,190,476}     # motion reject in within img_size
-        motion_scale      {4}           # scale for motion rect from img_size (2,4,8,16) keep it 4
-        innertia          {5}           # capture after ovement another 5
-        innertia_interval {100}         # at this ms interval
-        time_lapse        {0}           # time lapse cpature. even no motion. 0 disabled
-        sig_process       {0}           # send a user sig to this pid
-        run_app           {none}        # runs this app on capture TODO
-        # disables time_lapse snaps if dark average is under pixels are < 20 (0..255)
-        dark_lapse        {20}
-        # disables motion capture snaps if dark average is under 10
-        dark_motion      {10}
-        one_shot {0}                 # runs once then exist
-    }
+
 
     server{
-        port    {9000}              # locl server 0 to disable
-        mpg_multi_part {0}          #
+        port             {9000}              # locl server 0 to disable
+        mpeg_mpart       {0}                 # stream avi pmeg with multipart headers
     }
 
+    record{
+
+    }
 
     webcast{
-        enabled     {1}
-        server      {"http\://localhost\:8084/camera"}
-        security    {this_string_should_match_the_server}
-        cast_fps    {50}
-        pool_intl   {6}
-        record      {0}
-        insync      {0}
+        server           {"http\://localhost\:8084/"}      # would stream to liveimage_srv
+        security         {2678059ABXCGH}                   # server accept these lili
+        cast_fps         {10}                              # once streaming at this rate
+        pool_intl        {6}                               # checks server to start stream if any one browses the stream
+        insync           {0}                               # server send/confirm hanshake (BUGGY)
+
+    }
+    cameras{                                                # cameras on the system
+        {
+             #name         {garrage}                         # name of the cam
+             device       {/dev/video*}                     # local
+             on_event     {webcast,record,save_disabled}    # what to do on events, webcast and remote record, and local save
+             format       {image/jpg}                       # i dont quite use this
+             fps          {20}                              # fetching local cam
+
+            move{
+                motion           {100,1000}         # changed pixels range for spin, 0,0 to disable
+                motion_diff      {20}               # frame pixels change to detect motion
+                noise_div        {8}                # lower -> higher noise, (2...32)
+                in_rect          {0,0,0,0}          # motion in detection in within img_size
+                out_rect         {0,0,0,0}          # motion reject in within img_size
+                motion_scale     {4}                # scale for motion rect from img_size (2,4,8,16) keep it 4
+                innertia         {5,100}            # capture after spin 5 every 100 ms
+                time_lapse       {0}                # time lapse cpature. even no motion. 0 disabled
+                dark_comp        {20,10}            # timelapse disable and motion disable if average dark pix are under 20,10
+               ~run_app          {/home/marius/run/buzz.sh}
+                on_max_files     {8912,make_mov.sh}  # rolls over
+                max_movie        {200}               # when using lib_av 200 Mb/mpg file
+                save_loc         {/data/snaps/}      # crate this in advance, empty to not save
+            }
+        }
+
+        {
+            name          {digoodgmiq}
+            imgsz         {320,176}
+            url           {"http\://192.168.1.106\:8001/snapshot"}          # get's jpg image
+            format        {image/jpg}
+            on_event      {webcast,record,save_disabled}
+            fps           {1}                                               # this is a slow digoo cam
+            move{
+                motion           {30,600}           # changed pixels range for spin, 0,0 to disable
+                motion_diff      {20}               # frame pixels change to detect motion
+                noise_div        {8}                # lower -> higher noise, (2...32)
+                in_rect          {0,0,0,0}          # motion in detection in within img_size
+                out_rect         {0,0,0,0}          # motion reject in within img_size
+                motion_scale     {4}                # scale for motion rect from img_size (2,4,8,16) keep it 4
+                innertia         {5,100}            # capture after spin 5 every 100 ms
+                time_lapse       {0}                # time lapse cpature. even no motion. 0 disabled
+                dark_comp        {20,10}            # timelapse disable and motion disable if average dark pix are under 20,10
+               ~run_app          {/home/marius/run/buzz.sh}
+                on_max_files     {8912,make_mov.sh}  # rolls over
+                max_movie        {200}               # when using lib_av 200 Mb/mpg file
+                save_loc         {/data/snaps/}      # crate this in advance, empty to not save
+            }
+        }
+
+       experimental
+       {
+          # name           {rtsp0digoo}                    # same digo remote cam on rtsp, but does not work
+          #rtsp://admin:dg20160404@192.168.1.112/onvif0
+          url             {"rtsp\://192.168.1.106/onvif0"}
+          login           {BASIC,admin,dg20160404}
+
+          on_event        {webcast,record,save}            # start streaming to server and to record on events
+          fps             {10}
+       }
+
+       experimental
+       {
+           #name            {rpirpi}                        # a R-PI rtsp camera for tsting. experimental.
+           format          {vide/mpeg4}
+           rtsp            {TCP}
+           # rtsp://192.168.1.116:8554/unicast
+           url             {"rtsp\://192.168.1.116\:8554/unicast"} # the rtsp strea, link
+           on_event        {webcast,record,force,save}     #  force->save no mater of events
+           fps             {10}
+       }
+
     }
 }
