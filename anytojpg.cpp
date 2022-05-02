@@ -14,7 +14,7 @@ mpeger::~mpeger()
 
 }
 
-bool mpeger::init(const dims_t& imgsz)
+bool mpeger::init(const dims_t&)
 {
 
     return true;

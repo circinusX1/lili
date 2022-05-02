@@ -40,16 +40,12 @@ void mmotion::_motion(uint8_t pix,
                       int x, int y, int dx, int dy, int & pixels)
 {
     uint8_t Y  = base_py ? *(base_py + ((y*dy)  * _w) + (x*dx)): pix; /// curent pixel
-
     _dark += uint32_t(Y);		   //  noise and dark
     Y /= _noisediv;
     Y *= _noisediv;
-
     *(prowcur + (y * _mw) + x) = Y;       // build new video buffer
     uint8_t YP = *(prowprev+(y  * _mw) + (x));   // old buffer pixel
-
     int diff = abs(Y - YP);
-
     if(diff < _mdiff)
     {
         diff=Y;                         // black no move
@@ -66,7 +62,6 @@ void mmotion::_motion(uint8_t pix,
 
 int mmotion::_det_mov_422(const imglayout_t& imgl)
 {
-
     uint8_t* pSeen = _motionbufs[2];
     uint8_t* prowprev = _motionbufs[_mobuf_idx ? 0 : 1];
     uint8_t* prowcur = _motionbufs[_mobuf_idx ? 1 : 0];
@@ -97,15 +92,10 @@ int mmotion::_det_mov_422(const imglayout_t& imgl)
             _motion(0, base_py, pSeen, prowprev, prowcur, x-1, y-1, dx, dy, pixels);
 
         }
-
     }
-
-    //[x,y,X,Y] draw a rect
-
     _meter_show(pSeen);
     _dark /= pixels;
     _mobuf_idx = !_mobuf_idx;
-    //acale moves to (uint8-10)
     return _moves;
 }
 
@@ -143,7 +133,7 @@ void mmotion::_meter_show(uint8_t* pSeen)
             *(pSeen + (_outrect.Y * _mw) + x) = (uint8_t)128;
         }
     }
-    // show spin percentage on left as bar
+    // show percentage on left as bar
     int percentage = std::min(100,_moves);
     if(percentage > _mmeter)
         _mmeter = percentage;
