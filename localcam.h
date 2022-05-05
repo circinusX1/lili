@@ -9,10 +9,11 @@
 class localcam : public acamera
 {
 public:
-    localcam(const std::string& name, const std::string& loc, const Cbdler::Node& n);
+    localcam(const dims_t& wh,const std::string& name,
+            const std::string& loc, const Cbdler::Node& n);
     virtual ~localcam();
-    virtual size_t get_frame(const uint8_t** pb, EIMG_FMT& fmt, event_t& event);
-    virtual bool spin(event_t& event);
+    virtual size_t get_frame(imglayout_t& i);
+    virtual bool spin();
     virtual bool init(const dims_t&);
 
 private:
@@ -20,6 +21,9 @@ private:
     v4ldevice*      _dev=nullptr;
     dims_t          _img_size;
     EIMG_FMT        _fmt;
+    int             _fps;
+    time_t          _interval;
+    time_t          _fetchtime;
 };
 
 #endif // LOCALCAM_H

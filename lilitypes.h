@@ -1,17 +1,16 @@
 #ifndef _LILITYPES_H_
 #define _LILITYPES_H_
 
+#include <stdio.h>
 #include <assert.h>
+#include <time.h>
 #include <stdint.h>
 #include <string.h>
 
-#define     INITIAL_LEN     4096
-#define     STEP_LEN        1024
-
+#define     INITIAL_LEN     16384
+#define     STEP_LEN        2048
 
 #define          PACK_ALIGN_1   __attribute__((packed, aligned(1)))
-
-
 
 class Frame
 {
@@ -27,22 +26,47 @@ public:
         *pb = buf;
         return len;
     }
-    void copy(const uint8_t* p, size_t nlen)
-    {
+    bool realloc(size_t nlen){
         if(nlen > cap){
-            delete[] buf;
-            cap = ((nlen/STEP_LEN)+1)*STEP_LEN;
-            buf = new uint8_t[cap];
-            assert(buf);
+            size_t newcap = ((nlen/STEP_LEN)+1)*STEP_LEN;
+            uint8_t* pnewbuf = new uint8_t[newcap];
+            if(pnewbuf){
+                if(len){
+                    ::memcpy(pnewbuf, buf, len);
+                }
+                delete[] buf;
+                cap = newcap;
+                return true;
+            }
+            return  false;
         }
-        ::memcpy(buf, p, nlen);
-        len = nlen;
+        return true;
+    }
+    void append(const uint8_t* p, size_t nlen)
+    {
+        copy(p,len,nlen);
+    }
+    void copy(const uint8_t* p, size_t off, size_t nlen)
+    {
+        bool real=true;
+        if(nlen > cap){
+            real=realloc(nlen);
+        }
+        if(real){
+            ::memcpy(buf+off, p, nlen);
+            len = nlen+off;
+        }else{
+            len=0;
+        }
     }
     void    set_len(size_t l){len=l;}
     size_t  length()const{return len;}
     size_t  capa()const{return cap;}
+    size_t  room()const{return cap-len;}
     void    reset(){len=0;};
-    uint8_t*     buffer(int off=0){return buf+off;}
+    uint8_t*     buffer(int off=0){
+        return buf+off;
+    }
 private:
     uint8_t* buf=nullptr;
     size_t  cap=0;
@@ -50,7 +74,7 @@ private:
 };
 
 
-enum EIMG_FMT{eFJPG, eFMPG, e422};
+enum EIMG_FMT{eNONE=-1, eFJPG=0, eNOTJPG, e422};
 
 
 #define JPEG_MAGIC        0x12345678
@@ -61,20 +85,16 @@ enum EIMG_FMT{eFJPG, eFMPG, e422};
 #define CMD_RECORD      0x1
 #define CMD_SAVLOC      0x2
 #define EVT_JUST_MOTION      0x4
-#define EVT_MOTION      0x4|0x80
-#define EVT_TLAPSE      0x8|0x80
-#define EVT_SIGNAL      0x10|0x80
-#define EVT_FORCE       0x20|0x80
-
+#define EVT_MOTION      (0x4|0x80)
+#define EVT_TLAPSE      (0x8|0x80)
+#define EVT_SIGNAL      (0x10|0x80)
+#define EVT_FORCE       (0x20|0x80)
+#define FLG_STAMP       0x40
 
 struct  event_t {
     uint8_t     predicate;
     uint16_t    movepix:12;
 }PACK_ALIGN_1;
-
-
-#define         PTRU_TOUT  30
-
 
 struct  LiFrmHdr{
     uint32_t    len;
@@ -90,6 +110,119 @@ struct  LiFrmHdr{
     uint8_t     challange[16];
     char        camname[16];
 }PACK_ALIGN_1;
+
+inline bool is_jpeg(const uint8_t* pb, int len){
+    return len>10 && pb[0]==0xFF && pb[6]=='J' && pb[9]=='F';
+}
+
+struct rect_t{
+    int x;
+    int y;
+    int X;
+    int Y;
+};
+
+struct dims_t{
+    int x;
+    int y;
+};
+
+struct imglayout_t{
+    imglayout_t(){::memset(this,0,sizeof(*this));}
+    const uint8_t *_camp = nullptr;
+    size_t         _caml = 0;
+    EIMG_FMT       _camf = e422;
+    const uint8_t *_jpgp = nullptr;
+    size_t         _jpgl = 0;
+    EIMG_FMT       _jpgf = eFJPG;
+    dims_t         _dims = {0,0};
+    time_t         _now;
+};
+
+
+
+
+inline int parseURL(const char* url, char* scheme, size_t
+                    maxSchemeLen, char* host, size_t maxHostLen,
+                    int* port, char* path, size_t maxPathLen) //Parse URL
+{
+    (void)maxPathLen;
+    char* schemePtr = (char*) url;
+    char* hostPtr = (char*) strstr(url, "://");
+    if(hostPtr == NULL)
+    {
+        printf("Could not find host");
+        return 0; //URL is invalid
+    }
+
+    if( maxSchemeLen < (size_t)(hostPtr - schemePtr + 1 )) //including NULL-terminating char
+    {
+        printf("Scheme str is too small (%zu >= %zu)", maxSchemeLen,
+               hostPtr - schemePtr + 1);
+        return 0;
+    }
+    memcpy(scheme, schemePtr, hostPtr - schemePtr);
+    scheme[hostPtr - schemePtr] = '\0';
+
+    hostPtr+=3;
+
+    size_t hostLen = 0;
+
+    char* portPtr = strchr(hostPtr, ':');
+    if( portPtr != NULL )
+    {
+        hostLen = portPtr - hostPtr;
+        portPtr++;
+        if( sscanf(portPtr, "%d", port) != 1)
+        {
+            printf("Could not find port");
+            return 0;
+        }
+    }
+    else
+    {
+        *port=80;
+    }
+    char* pathPtr = strchr(hostPtr, '/');
+    if( hostLen == 0 )
+    {
+        hostLen = pathPtr - hostPtr;
+    }
+
+    if( maxHostLen < hostLen + 1 ) //including NULL-terminating char
+    {
+        printf("Host str is too small (%zu >= %zu)", maxHostLen, hostLen + 1);
+        return 0;
+    }
+    memcpy(host, hostPtr, hostLen);
+    host[hostLen] = '\0';
+
+    size_t pathLen;
+    char* fragmentPtr = strchr(hostPtr, '#');
+    if(fragmentPtr != NULL)
+    {
+        pathLen = fragmentPtr - pathPtr;
+    }
+    else
+    {
+        if(pathPtr)
+            pathLen = strlen(pathPtr);
+        else
+            pathLen=0;
+    }
+
+    if(pathPtr)
+    {
+        memcpy(path, pathPtr, pathLen);
+        path[pathLen] = '\0';
+    }
+    else
+    {
+        path[0]=0;
+    }
+
+    return 1;
+}
 
 
 #endif

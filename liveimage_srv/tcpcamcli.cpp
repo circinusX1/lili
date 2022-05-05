@@ -26,7 +26,7 @@ TcpCamCli::TcpCamCli(RawSock& o,
                      const LiFrmHdr& h,const char* clionhdr):RawSock(o,h,RawSock::CAM),
     _on_conhdr(clionhdr)
 {
-    _cap = MAX_BUFF;
+    _cap  = MAX_BUFF;
     _seps = 0;
     _name = _header.camname;
 
@@ -63,7 +63,7 @@ TcpCamCli::TcpCamCli(RawSock& o,
         ::mkdir(fnp,0777);
     }
     _fpath =fnp;
-
+    _load_seq();
 }
 
 /**
@@ -71,6 +71,7 @@ TcpCamCli::TcpCamCli(RawSock& o,
  */
 TcpCamCli::~TcpCamCli()
 {
+    _save_seq();
     destroy(true);
     GLOGI("CAM DIS_CONNECTED " << this->Rsin().c_str());
     GLOGD(__FUNCTION__);
@@ -192,27 +193,16 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
 
     if(!_recordname.empty() && _header.event.predicate & CMD_RECORD)
     {
-        //FILE*   pf;
-        char    fn[256];
-        constexpr unsigned char purple[] = { 255, 0, 0 };
+        char      fn[256];
+        constexpr unsigned char red[] = { 255, 0, 0 };
         constexpr unsigned char black[] = { 0, 0, 0 };
 
         CImg<unsigned char> img;
         img.load_jpeg_buffer(vf, imgsz);
         ::snprintf(fn, sizeof(fn),"%s:%s,%d",str_time(), _name.c_str(), _header.event.movepix);
-
-        img.draw_text(0,0, fn, purple,black,1,26);
-
-        snprintf(fn,sizeof(fn),"%s/%02d-%05zu.jpg",_fpath.c_str(),_header.event.movepix,_seq++);
+        img.draw_text(0,0, fn, red,black,1,26);
+        snprintf(fn,sizeof(fn),"%s/img_%05zu.jpg",_fpath.c_str(),_seq++);
         img.save(fn);
-        /*
-        pf = ::fopen(fn,"wb");
-        if(pf)
-        {
-            ::fwrite(bf,1,imgsz, pf);
-            ::fclose(pf);
-        }
-        */
         if((int)_seq > (int)_maxseq)
         {
             if(!_onmaxseq.empty())
@@ -223,9 +213,8 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
                 shell += this->name() + " &";
                 GLOGD("executing" << shell);
                 ::system(shell.c_str());
-                //_tm->run( namex,_onmaxseq,where,namex);
             }
-            _seq = 0; // to do wait for taks then reset to 0
+            _save_seq();
         }
     }
     return clients;

@@ -32,46 +32,22 @@
 
 #include "v4ldevice.h"
 #include "sockserver.h"
-#include "jpeger.h"
-#include "mpeger.h"
+#include "fxxtojpg.h"
+#include "anytojpg.h"
 #include "cbconf.h"
 #include "rtspcam.h"
 #include "localcam.h"
-#include "httpcam.h"
+#include "jpeghttpcam.h"
 #include "webcast.h"
 #include "lilitypes.h"
-#include "motion_track.h"
+#include "camevents.h"
+#include "jencoder.h"
 /*
 sudo apt-get install libv4l-dev libjpeg-dev
 */
 
 using namespace std;
 bool            __alive = true;
-bool            _sig_proc_capture=false;
-
-struct  MotionLapse{
-    int          robinserve     = 0x1;
-    time_t       mpgnewfile     = 0;
-    time_t       lapsetick      =  gtc();
-    time_t       tickmove       =  gtc();
-    event_t      event          = {0,0};
-    dims_t       mohilo         = CFG["move"]["motion"].to_dims();
-    int          innertia       = CFG["move"]["innertia"].to_int();
-    int          inertiiaitl    = CFG["move"]["inertiiaitl"].to_int();
-    int          time_lapse     = CFG["move"]["time_lapse"].to_int();
-    int          dark_lapse     = CFG["move"]["dark_lapse"].to_int();
-    int          dark_motion    = CFG["move"]["dark_motion"].to_int();
-    int          one_shot       = CFG["move"]["one_shot"].to_int();
-    std::string  save_loc       = CFG["record"]["save_loc"].value();
-    int          max_size       = CFG["record"]["max_size"].to_int();
-    int          on_max_files   = CFG["record"]["on_max_files"].to_int(0);
-    std::string  on_max_comand  = CFG["record"]["on_max_files"].value(1);
-    int          sig_process    = CFG["move"]["sig_process"].to_int();
-    std::string  on_move        = CFG["move"]["on_move"].value();
-    int          movementintertia = 0;
-    int          firstimage = 0;
-};
-
 
 static void ControlC (int i)
 {
@@ -83,13 +59,10 @@ static void ControlC (int i)
 static void Capture (int i)
 {
     (void)i;
-    _sig_proc_capture=true;
 }
 
 
 static void kapture();
-void motion_lapse(motion_track* mt, MotionLapse*, const uint8_t*, const uint8_t* jpgimg,
-                  size_t jpgl,  EIMG_FMT, EIMG_FMT);
 
 
 int main(int nargs, char* vargs[])
@@ -122,30 +95,18 @@ int main(int nargs, char* vargs[])
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void kapture()
 {
-
+    imglayout_t             image;
     std::string             lib_av      = CFG["image"]["lib_av"].value();
     std::string             lib_curl    = CFG["image"]["lib_curl"].value();
     int                     jquality    = CFG["image"]["jpg_quality"].to_int();
     EIMG_FMT                img_format  = (EIMG_FMT)CFG["image"]["img_format"].to_int();
     dims_t                  img_size    = CFG["image"]["img_size"].to_dims();
     bool                    bw_image    = CFG["image"]["bw_image"].to_int()!=0;
-    dims_t                  mohilo      = CFG["move"]["motion"].to_dims();
-
-    sockserver*             pserver     = nullptr;
-    MotionLapse             mlapse;
+    event_t                 loopevent;
     std::vector<acamera*>   cameras;
-    motion_track*           pmotion     = nullptr;
-    encoder*                pencoder    = nullptr;
-    size_t                  frmlen;
-    int                     jpgsz;
-    const uint8_t*          frmdata;
-    const uint8_t*          pjpg;
-    EIMG_FMT                fmt = e422;
-    EIMG_FMT                camfmt = e422;
+    sockserver*             pserver     = nullptr;
+    jencoder                 encode(jquality,  bw_image);
 
-    if(mohilo.y > mohilo.x){
-        pmotion = new motion_track(mohilo.x, mohilo.y, img_size);
-    }
     int local_server_port = CFG["server"]["port"].to_int();
     if(local_server_port){
         pserver = new sockserver(local_server_port, img_size, img_format);
@@ -186,217 +147,108 @@ void kapture()
             }
         }
 
-        acamera* pc;
+        acamera* pc = nullptr;
         if(!url.empty())
         {
 #ifdef WITH_RTSP
             if(url.find("rtsp")!=(size_t)-1)
-                pc = new rtspcam(name, url, pd);
+                pc = new rtspcam(img_size, name, url, pd);
             else
 #endif
-            if(url.find("http")!=(size_t)-1)
-                pc = new httpcam(name, url, pd);
-            else
-                TRACE() << "NO CAM CONFIGURED\n";
+                if(url.find("http")!=(size_t)-1)
+                    pc = new jpeghttpcam(img_size, name, url, pd);
+                else{
+                    TRACE() << "NO CAM CONFIGURED\n";
+                }
 
         }
         else if(!dev.empty())
         {
-            pc = new localcam(name, dev, pd);
+            pc = new localcam(img_size, name, dev, pd);
         }
-        pc->set_flag(flag);
-        std::string swebcast = CFG["webcast"]["server"].value();
-        if(!swebcast.empty())
-        {
-            imgsink* ps = new webcast(name);
-            ps->init(img_size);
-            pc->set_peer(ps);
+        if(pc==nullptr){
+            __alive = 0;
+        }else{
+            std::string swebcast = CFG["webcast"]["server"].value();
+            if(!swebcast.empty())
+            {
+                imgsink* ps = new webcast(name);
+                ps->init(img_size);
+                pc->set_peer(ps);
+            }
+            pc->init(img_size);
+            cameras.push_back(pc);
+            if(pserver)
+                pserver->reg_cam(pc->name());
         }
-        pc->init(img_size);
-        cameras.push_back(pc);
-        if(pserver)
-            pserver->reg_cam(pc->name());
     }
-
-    if(img_format == eFJPG){
-        pencoder = new jpeger(jquality, bw_image);
-    }else{
-        pencoder = new mpeger(jquality, bw_image);
-    }
-
+    encode.init(img_size);
     while(__alive && 0 == ::usleep(10000))
     {
+        image._now = ::gtc();
         if(pserver){
-            pserver->spin(mlapse.event);
+            pserver->spin();
         }
-        for(auto &p : cameras)
+        for(auto &ap : cameras)
         {
-            p->spin(mlapse.event);
-            frmlen = p->get_frame(&frmdata, fmt, mlapse.event);
-            camfmt = fmt;
-            if(frmlen)
+            acamera* p = ap;
+            image._caml = 0;
+            p->get_frame(image);
+            if(image._caml)
             {
-                mlapse.event = p->get_flag();
-                if(fmt == e422)
+                if(image._camf == e422 || image._camf == eNOTJPG)
                 {
-                    jpgsz = pencoder->convert420(frmdata, frmlen, img_size.x, img_size.y, &pjpg);
-                    fmt = eFJPG;
+                    encode.cam_to_jpg(image);
                 }
                 else
                 {
-                    pjpg = frmdata;
-                    jpgsz = frmlen;
+                    image._jpgf = image._camf;
+                    image._jpgp = image._camp;
+                    image._jpgl = image._caml;
                 }
-                if(pmotion){
-                    mlapse.event = p->get_flag();
-                    motion_lapse(pmotion, &mlapse, frmdata, pjpg, jpgsz, fmt, camfmt);
-                }
-                if(p->peer()){
-                    p->peer()->stream(pjpg, jpgsz, img_size, p->name(), mlapse.event, fmt);
+                loopevent = p->proc_events(image);
+                if(p->peer())
+                {
+                    p->peer()->stream(image._jpgp, image._jpgl, img_size, p->name(), loopevent, image._jpgf);
                 }
                 if(pserver && pserver->has_clients(p->name()))
                 {
                     int wants = pserver->anyone_needs();
-                    if(wants & ~WANTS_MOTION){
-                        pserver->stream_on(pjpg, jpgsz, fmt, wants);
+                    if(wants & ~WANTS_MOTION)
+                    {
+                        pserver->stream_on(image._jpgp, image._jpgl, image._jpgf, wants);
                     }
-                    else if(pmotion)
+                    else
                     {
                         int             w,h,sz;
-                        const uint8_t*  mot = pmotion->getm(w, h, sz);
-                        jpgsz = pencoder->convertBW(mot, sz, w, h, &pjpg);
-                        pserver->stream_on(pjpg, sz, fmt, wants);
+                        const uint8_t*  mot = p->getm(w, h, sz);
+                        if(mot)
+                        {
+                            imglayout_t imly;
+                            imly._camp=mot;
+                            imly._caml=sz;
+                            imly._camf=e422;
+                            imly._dims.x=w;
+                            imly._dims.y=h;
+                            int jpgsz = encode.cam_to_bw(imly);
+                            if(jpgsz){
+                                pserver->stream_on(imly._jpgp, imly._jpgl, imly._jpgf, wants);
+                            }
+                        }else{
+                            pserver->stream_on(nullptr, 0, eFJPG, wants);
+                        }
                     }
                 }
-                mlapse.event.movepix = 0;
-                mlapse.event.predicate = 0;
-                _sig_proc_capture = false;
+                p->clean_events();
             }
         }
-
-        if(mlapse.one_shot)
-            break;
+        ::usleep(16000);
     }
 
     delete pserver;
     for(auto& a: cameras){
         delete a;
     }
-    delete pmotion;
-    delete pencoder;
+
 }
-
-void motion_lapse(motion_track* mt,
-                  MotionLapse* pm,
-                  const uint8_t* frmdata,
-                  const uint8_t* jpgimg,
-                  size_t  jpgl,
-                  EIMG_FMT fmt, EIMG_FMT camfmt)
-{
-    char fname[256];
-    uint32_t now =  gtc();
-
-    if(now - pm->tickmove > pm->inertiiaitl)
-    {
-        pm->event.movepix = mt->movement(frmdata, camfmt);
-        if( pm->event.movepix )
-        {
-            pm->movementintertia = pm->innertia;
-        }
-        if(pm->movementintertia > 0)
-        {
-            --pm->movementintertia;
-            if(pm->event.movepix==0){
-                pm->event.movepix = pm->movementintertia;
-            }
-        }
-        if(pm->event.movepix){
-            TRACE() << "movpix = " << pm->event.movepix << "\n";
-            pm->event.predicate |= EVT_MOTION;
-        }else{
-            pm->event.predicate &= ~EVT_MOTION;
-	}
-        pm->tickmove = now;
-    }
-
-    if(pm->time_lapse > 0)
-    {
-        if((now - pm->lapsetick) > (uint32_t)pm->time_lapse)
-        {
-            pm->event.predicate |= EVT_TLAPSE;
-            pm->lapsetick = now;
-        }else{
-            pm->event.predicate &= ~EVT_TLAPSE;
-	}
-    }
-
-    if(mt->darkaverage() < pm->dark_lapse)
-    {
-        pm->event.predicate &= ~EVT_TLAPSE;
-        pm->event.predicate &= ~EVT_MOTION;
-    }
-
-    if(_sig_proc_capture){
-        _sig_proc_capture=0;
-        pm->event.predicate |= EVT_SIGNAL;
-     }
-
-   if((pm->event.predicate & EVT_JUST_MOTION) != 0){
-   	::system(pm->on_move.c_str());
-   }
-
-
-    if((pm->event.predicate & FLAG_SAVE && pm->event.movepix) ||
-       pm->event.predicate & FLAG_FORCE_SAVE)
-    {
-        if(fmt!=0)
-        {
-            if(time(0) - pm->mpgnewfile > 3600*24)  /*every day*/
-            {
-                pm->mpgnewfile = time(0);
-                ::sprintf(fname, "%smov_%d.mpeg", pm->save_loc.c_str(), (int)pm->mpgnewfile);
-                FILE* 		pff = ::fopen(fname,"wb");
-                if(pff){
-                    ::fclose(pff);
-                }
-            }
-            else
-            {
-                ::sprintf(fname, "%smov_%d.mpeg", pm->save_loc.c_str(), int(pm->mpgnewfile));
-                FILE* 		pff = ::fopen(fname,"ab");
-                long        flen = 0;
-                if(pff)
-                {
-                    ::fseek(pff,0,SEEK_END);
-                    flen = ::ftell(pff);
-                    ::fwrite(jpgimg,1,jpgl,pff);
-                    ::fclose(pff);
-                }
-                if(flen > (long) (1000000 * pm->max_size)){
-                    pm->mpgnewfile = 0;          /*every exceed*/
-                }
-            }
-        }
-        else
-        {
-            ::sprintf(fname, "%si%04d-%06d.jpg", pm->save_loc.c_str(),pm->event.movepix, pm->firstimage);
-            ++pm->firstimage;
-            if(pm->firstimage > pm->on_max_files)  pm->firstimage = 0;
-            FILE* 		pff = ::fopen(fname,"wb");
-            if(pff)
-            {
-                ::fwrite(jpgimg,1,jpgl,pff);
-                ::fclose(pff);
-                TRACE() << "saving: " << fname << "\n";
-                ::symlink(fname,"tmp/lastimage.jpg");
-                if(pm->sig_process > 0)
-                {
-                    ::kill(pm->sig_process, SIGUSR2);
-                    TRACE() << "SIGUSR2: " << pm->sig_process << "\n";
-                }
-            }
-        }
-    }
-}
-
 

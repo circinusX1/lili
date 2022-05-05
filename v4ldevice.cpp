@@ -28,7 +28,7 @@
 #define VIDEO_BUFFS 2
 #define MOTION_SZ   64
 
-v4ldevice::v4ldevice(const char* device, int x, int y)
+v4ldevice::v4ldevice(const char* device, int x, int y, int fps)
 {
     _sdevice = device;
     _curbuffer = 0;
@@ -37,6 +37,7 @@ v4ldevice::v4ldevice(const char* device, int x, int y)
     _fatal = false;
     for (int i = 0; i < MAX_BUFFERS; ++i)
         _buffers[i].start=0;
+   _fps = fps;
 }
 
 v4ldevice::~v4ldevice()
@@ -157,7 +158,7 @@ bool v4ldevice::open()
             TRACE() << "error set frame interval " << _fps << "\n";
         }
         _fps = fint.parm.capture.timeperframe.denominator;
-        TRACE() << "FPS: recalculated due to camera limitations at: " << _fps << "\n";
+
     }
     uint32_t wmin = frmt.fmt.pix.width * 2;
     if (frmt.fmt.pix.bytesperline < wmin)

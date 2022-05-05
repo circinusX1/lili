@@ -59,13 +59,12 @@ class v4ldevice
 {
 public:
 
-    v4ldevice(const char* device, int x, int y);
+    v4ldevice(const char* device, int x, int y, int fps);
     virtual ~v4ldevice();
 
     bool open();
     void close();
     const uint8_t* read(int& w, int& h, int& sz, bool& fatal); // ret 0 fatal, 1 aquired, -1 continue
-    const uint8_t* getm(int& w, int& h, int& sz); // ret 0 fatal, 1 aquired, -1 continue
 
 private:
     int _ioctl(int request, void* argp);

@@ -3,12 +3,18 @@
 
 extern bool __alive;
 
-localcam::localcam(const std::string& name,
+localcam::localcam(const dims_t& wh,
+                   const std::string& name,
                    const std::string& loc,
-                   const Cbdler::Node& n):acamera(name, loc, n)
+                   const Cbdler::Node& n):acamera(wh,name, loc, n)
 {
     _device = loc;
     _img_size = CFG["image"]["img_size"].to_dims();
+    _fps = n["fps"].to_int();
+    _interval = 1000 / _fps;
+    if(_interval < 30)_interval = 30;  // nomore than 30 fps
+    else if(_interval > 1000)_interval = 1000;  // nless than 1fps
+    _fetchtime = ::gtc();
 }
 
 localcam::~localcam()
@@ -21,7 +27,7 @@ localcam::~localcam()
 bool  localcam::init(const dims_t& t)
 {
     _img_size = t;
-    _dev = new v4ldevice(_device.c_str(), t.x, t.y);
+    _dev = new v4ldevice(_device.c_str(), t.x, t.y, _fps);
     if(_dev)
     {
         return _dev->open();
@@ -29,19 +35,28 @@ bool  localcam::init(const dims_t& t)
     return false;
 }
 
-size_t localcam::get_frame(const uint8_t** pb, EIMG_FMT& fmt, event_t& event)
+size_t localcam::get_frame(imglayout_t& i)
 {
-    bool fatal = false;
-    int imgsz = 0;
-    *pb = _dev->read(_img_size.x, _img_size.y, imgsz, fatal);
-    if(fatal || imgsz==0){
-        return 0;
+    time_t  now = i._now;
+    i._caml = 0;
+    if(now - _fetchtime >= _interval)
+    {
+        bool fatal = false;
+        int imgsz = 0;
+        i._camp = _dev->read(_img_size.x, _img_size.y, imgsz, fatal);
+        if(fatal || imgsz==0){
+            return 0;
+        }
+        i._camf = e422;
+        i._dims.x = _img_size.x;
+        i._dims.y = _img_size.y;
+        i._caml = imgsz;
+        _fetchtime = now;
     }
-    fmt = e422;
-    return (size_t)imgsz;
+    return (size_t)i._caml;
 }
 
-bool localcam::spin(event_t&)
+bool localcam::spin()
 {
     return true;
 }

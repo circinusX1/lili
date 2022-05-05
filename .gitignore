@@ -11,4 +11,7 @@ build/*
 build-qt*/*
 *.conf
 *.konf
+./liveimage_srv/liveimage_srv.conf
+./live555/*
+*.mpg
 
