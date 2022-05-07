@@ -27,7 +27,7 @@ camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
     _run_app        = n["run_app"].value();
     _movementintertia = 0;
     _firstimage = 0;
-    if(_mohilo.x)
+    if(_mohilo.x && _mohilo.y)
     {
         _mt = new mmotion(wh, n);
     }

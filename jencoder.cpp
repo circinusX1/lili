@@ -23,12 +23,12 @@ bool jencoder::init(const dims_t& d)
     return true;
 }
 
-int  jencoder::cam_to_jpg(imglayout_t& img)
+int  jencoder::cam_to_jpg(imglayout_t& img, const std::string& name)
 {
     if(img._camf==e422){
-        return _jpgenc->cam_to_jpg(img);
+        return _jpgenc->cam_to_jpg(img, name);
     }
-    return _mpgenc->cam_to_jpg(img);
+    return _mpgenc->cam_to_jpg(img, name);
 }
 
 int  jencoder::cam_to_bw(imglayout_t& img)

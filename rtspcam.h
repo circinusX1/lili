@@ -11,9 +11,6 @@
 #include "pipefile.h"
 
 
-#define VF_LEN      8912
-#define VF_LEN_ADD  1024
-
 class rtpudpcs;
 class rtspcam : public osthread, public acamera
 {
@@ -29,14 +26,14 @@ private:
 
 
 private:
-    std::string             _url,_transport,_user,_uri;
+    std::string             _url,_user,_uri;
     long                    _seq  = 0;
     unsigned long           _curl_auth = CURLAUTH_NONE;
     Frame                   _frames[2];
     int                     _flip = 0;
     mutexx                  _mut;
     bool                    _ontcp = false;
-
+    pipiefile*              _pipa;  //("/tmp/movie.mov");
 };
 
 #endif // RTSPCAM_H

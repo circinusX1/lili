@@ -62,7 +62,7 @@ bool jpeger::init(const dims_t&)
     return true;
 }
 
-int jpeger::cam_to_jpg(imglayout_t& img)
+int jpeger::cam_to_jpg(imglayout_t& img, const std::string& name)
 {
     const uint8_t* pstart = img._camp;
     _imgsize =  _put_jpeg_yuv420p_memory(pstart, img._dims.x, img._dims.y, _jpgq, 0);

@@ -17,13 +17,9 @@ mmotion::mmotion(const dims_t& wh, const Cbdler::Node& n):_w(wh.x),_h(wh.x)
 	_inrect   = n["in_rect"].to_rect();
 	_outrect  = n["out_rect"].to_rect();
 	_pixnoise = n["pix_noise"].to_int() * 2.55;
-
-	if(_imgscale<1)
-		_imgscale=1;
-	else if(_imgscale>16)
-		_imgscale=16;
-
-	if(_noisediv<4)_noisediv=4;
+	if(_imgscale<1)				_imgscale=1;
+	else if(_imgscale>16)		_imgscale=16;
+	if(_noisediv<4)				_noisediv=4;
 	_calc_rects(wh.x,wh.y);
 }
 
@@ -272,8 +268,8 @@ void mmotion::_calc_rects(int w, int h)
 		memset(_motionbufs[1],0,msz);
 		memset(_motionbufs[2],0,msz);
 		_mobuf_idx = 0;
-		_motionsz = msz;
-		_moves=0;
+		_motionsz  = msz;
+		_moves = 0;
 		_mmeter = 0;
 	}
 }

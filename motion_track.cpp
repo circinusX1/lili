@@ -5,11 +5,9 @@
 motion_track::motion_track(int motionlow, int motionhi, const dims_t& wh):_mt(wh.x, wh.y)
 {
     _motionlow = motionlow;
-    if(_motionlow==0)
-        _motionlow=1;
+    if(_motionlow==0)        _motionlow=1;
     _motionhi = motionhi;
-    if(_motionhi==0)
-        _motionhi=8000;
+    if(_motionhi==0)         _motionhi=8000;
 }
 
 int motion_track::movement(const uint8_t* buff, EIMG_FMT fmt)

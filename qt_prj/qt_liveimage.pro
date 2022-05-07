@@ -42,8 +42,7 @@ SOURCES += \
     ../sock.cpp \
     ../sockserver.cpp \
     ../v4ldevice.cpp \
-    ../webcast.cpp \
-    ../sdp.c
+    ../webcast.cpp
 
 
 HEADERS += \

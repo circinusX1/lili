@@ -27,6 +27,7 @@ camevents.cpp
 anytojpg.cpp
 rtpudpcs.cpp
 rtspcam.cpp
+rtspproto.cpp
 sock.cpp
 sockserver.cpp
 v4ldevice.cpp

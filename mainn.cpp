@@ -105,7 +105,7 @@ void kapture()
     event_t                 loopevent;
     std::vector<acamera*>   cameras;
     sockserver*             pserver     = nullptr;
-    jencoder                 encode(jquality,  bw_image);
+    jencoder                encode(jquality,  bw_image);
 
     int local_server_port = CFG["server"]["port"].to_int();
     if(local_server_port){
@@ -118,7 +118,7 @@ void kapture()
         }
     }
 
-
+    encode.init(img_size);
     size_t cams = CFG["cameras"].count();
     for(size_t c = 0 ; c < cams; c++)
     {
@@ -150,11 +150,10 @@ void kapture()
         acamera* pc = nullptr;
         if(!url.empty())
         {
-#ifdef WITH_RTSP
+            TRACE()<<url<<"\n";
             if(url.find("rtsp")!=(size_t)-1)
                 pc = new rtspcam(img_size, name, url, pd);
             else
-#endif
                 if(url.find("http")!=(size_t)-1)
                     pc = new jpeghttpcam(img_size, name, url, pd);
                 else{
@@ -182,7 +181,7 @@ void kapture()
                 pserver->reg_cam(pc->name());
         }
     }
-    encode.init(img_size);
+
     while(__alive && 0 == ::usleep(10000))
     {
         image._now = ::gtc();
@@ -198,7 +197,7 @@ void kapture()
             {
                 if(image._camf == e422 || image._camf == eNOTJPG)
                 {
-                    encode.cam_to_jpg(image);
+                    encode.cam_to_jpg(image, p->name());
                 }
                 else
                 {
@@ -240,6 +239,7 @@ void kapture()
                     }
                 }
                 p->clean_events();
+                image._jpgl = 0;
             }
         }
         ::usleep(16000);

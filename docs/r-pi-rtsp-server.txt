@@ -1,0 +1,71 @@
+OPTIONS rtsp://192.168.1.116:8554/unicast RTSP/1.0
+CSeq: 1
+User-Agent: Lavf58.29.100
+
+
+	RTSP/1.0 200 OK
+	CSeq: 1
+	Date: Thu, May 05 2022 13:59:39 GMT
+	Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER
+
+
+DESCRIBE rtsp://192.168.1.116:8554/unicast RTSP/1.0
+Accept: application/sdp
+CSeq: 2
+User-Agent: Lavf58.29.100
+	
+	
+	RTSP/1.0 200 OK
+	CSeq: 2
+	Date: Thu, May 05 2022 13:59:39 GMT
+	Content-Base: rtsp://192.168.1.116:8554/unicast/
+	Content-Type: application/sdp
+	Content-Length: 537
+
+	v=0
+	o=- 1651758637343892 1 IN IP4 192.168.1.116
+	s=LIVE555 Streaming Media v2022.04.26
+	i=LIVE555 Streaming Media v2022.04.26
+	t=0 0
+	a=tool:LIVE555 Streaming Media v2022.04.26
+	a=type:broadcast
+	a=control:*
+	a=range:npt=now-
+	a=x-qt-text-nam:LIVE555 Streaming Media v2022.04.26
+	a=x-qt-text-inf:LIVE555 Streaming Media v2022.04.26
+	m=video 0 RTP/AVP 96
+	c=IN IP4 0.0.0.0
+	b=AS:500
+	a=rtpmap:96 H264/90000
+	a=fmtp:96 profile-level-id=640028;sprop-parameter-sets=J2QAKKwrQCADDQDxImo=,KO4CXLA=
+	a=x-dimensions:1024,768
+	a=control:track1
+
+SETUP rtsp://192.168.1.116:8554/unicast/track1 RTSP/1.0
+Transport: RTP/AVP/UDP;unicast;client_port=15392-15393
+CSeq: 3
+User-Agent: Lavf58.29.100
+
+	RTSP/1.0 200 OK
+	CSeq: 3
+	Date: Thu, May 05 2022 13:59:39 GMT
+	Transport: RTP/AVP;unicast;destination=192.168.1.191;source=192.168.1.116;client_port=15392-15393;server_port=6970-6971
+	Session: 611B4ABE;timeout=65
+
+PLAY rtsp://192.168.1.116:8554/unicast/ RTSP/1.0
+Range: npt=0.000-
+CSeq: 4
+User-Agent: Lavf58.29.100
+Session: 611B4ABE
+
+
+
+
+
+
+
+
+
+
+
+

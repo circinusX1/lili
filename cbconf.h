@@ -41,6 +41,7 @@ struct Nullout
     Nullout& operator <<(const std::string&){return *this;}
 };
 
+std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len);
 
 
 extern Nullout     nullout;

@@ -7,16 +7,33 @@
 #include <stdint.h>
 #include <string.h>
 
-#define     INITIAL_LEN     16384
-#define     STEP_LEN        2048
+
+#define     INITIAL_LEN     50000
+#define     STEP_LEN        2000
 
 #define          PACK_ALIGN_1   __attribute__((packed, aligned(1)))
+
+
+struct rect_t{
+    int x;
+    int y;
+    int X;
+    int Y;
+};
+
+struct dims_t{
+    int x;
+    int y;
+};
+
+
 
 class Frame
 {
 public:
     Frame(int cap=INITIAL_LEN):cap(INITIAL_LEN),len(0){
         buf = new uint8_t[cap];
+        _ready = false;
         assert(buf);
     }
     ~Frame(){
@@ -42,6 +59,7 @@ public:
         }
         return true;
     }
+    void ready(){_ready=true;};
     void append(const uint8_t* p, size_t nlen)
     {
         copy(p,len,nlen);
@@ -49,6 +67,7 @@ public:
     void copy(const uint8_t* p, size_t off, size_t nlen)
     {
         bool real=true;
+
         if(nlen > cap){
             real=realloc(nlen);
         }
@@ -63,14 +82,17 @@ public:
     size_t  length()const{return len;}
     size_t  capa()const{return cap;}
     size_t  room()const{return cap-len;}
-    void    reset(){len=0;};
+    void    reset(){len=0;_ready = false;};
     uint8_t*     buffer(int off=0){
         return buf+off;
     }
+    bool is_ready()const{return _ready && _wh.x;}
+    dims_t  _wh = {0,0};
 private:
     uint8_t* buf=nullptr;
     size_t  cap=0;
     size_t  len=0;
+    bool    _ready;
 };
 
 
@@ -115,17 +137,6 @@ inline bool is_jpeg(const uint8_t* pb, int len){
     return len>10 && pb[0]==0xFF && pb[6]=='J' && pb[9]=='F';
 }
 
-struct rect_t{
-    int x;
-    int y;
-    int X;
-    int Y;
-};
-
-struct dims_t{
-    int x;
-    int y;
-};
 
 struct imglayout_t{
     imglayout_t(){::memset(this,0,sizeof(*this));}
@@ -137,9 +148,8 @@ struct imglayout_t{
     EIMG_FMT       _jpgf = eFJPG;
     dims_t         _dims = {0,0};
     time_t         _now;
+    int            _acum = 0;
 };
-
-
 
 
 inline int parseURL(const char* url, char* scheme, size_t
