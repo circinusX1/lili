@@ -171,3 +171,27 @@ void camevents::clean_events()
     _event.movepix = 0;
     _event.predicate = 0;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void camevents::set(const dims_t& mohilo, int pixnoise, int pixdiv, int imgscale)
+{
+    if(_mt)
+    {
+        if(mohilo.x > 0){
+            _mohilo = mohilo;
+        }
+        _mt->set(pixnoise, pixdiv, imgscale);
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void camevents::get(dims_t& mohilo, int& pixnoise, int& pixdiv, int& imgscale)
+{
+    if(_mt)
+    {
+         mohilo = _mohilo;
+        _mt->get(pixnoise, pixdiv, imgscale);
+    }
+
+}

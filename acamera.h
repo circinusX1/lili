@@ -42,7 +42,6 @@ class acamera
 public:
     acamera(const dims_t& wh, const std::string& name, const std::string& loc, const Cbdler::Node& n);
     virtual ~acamera();
-
     virtual bool init(const dims_t&)=0;
     virtual size_t get_frame(imglayout_t& i)=0;
     virtual bool spin()=0;
@@ -53,6 +52,8 @@ public:
     const event_t&  proc_events(const imglayout_t& img);
     void  clean_events();
     void  init_frames();
+    void set_motion(const dims_t& mohilo, int pixnoise, int pixdiv, int imgscale);
+    void get_motion(dims_t& mohilo, int& pixnoise, int& pixdiv, int& imgscale);
 
 protected:
     camevents       _mt;

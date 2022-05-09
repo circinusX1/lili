@@ -183,7 +183,7 @@ void kapture()
     {
         image._now = ::gtc();
         if(pserver){
-            pserver->spin();
+            pserver->spin(cameras);
         }
         for(auto &ap : cameras)
         {
@@ -212,7 +212,7 @@ void kapture()
                     int wants = pserver->anyone_needs();
                     if(wants & ~WANTS_MOTION)
                     {
-                        pserver->stream_on(image._jpgp, image._jpgl, image._jpgf, wants);
+                        pserver->stream_on(image._jpgp, image._jpgl, image._jpgf, wants, p);
                     }
                     else
                     {
@@ -228,10 +228,10 @@ void kapture()
                             imly._dims.y=h;
                             int jpgsz = encode.cam_to_bw_for_motion(imly);
                             if(jpgsz){
-                                pserver->stream_on(imly._jpgp, imly._jpgl, imly._jpgf, wants);
+                                pserver->stream_on(imly._jpgp, imly._jpgl, imly._jpgf, wants, p);
                             }
                         }else{
-                            pserver->stream_on(nullptr, 0, eFJPG, wants);
+                            pserver->stream_on(nullptr, 0, eFJPG, wants, p);
                         }
                     }
                 }

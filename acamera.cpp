@@ -64,5 +64,14 @@ void  acamera::clean_events()
     _mt.clean_events();
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void  acamera::set_motion(const dims_t& mohilo, int pixnoise, int pixdiv, int imgscale)
+{
+    _mt.set(mohilo, pixnoise, pixdiv, imgscale);
+}
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void  acamera::get_motion(dims_t& mohilo, int& pixnoise, int& pixdiv, int& imgscale)
+{
+    _mt.get(mohilo, pixnoise, pixdiv, imgscale);
+}

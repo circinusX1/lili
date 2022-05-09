@@ -60,20 +60,20 @@ public:
     std::string  _camname;
 };
 
-
+class acamera;
 class sockserver
 {
 public:
     sockserver(int port, const dims_t& d, EIMG_FMT fmt);
     virtual ~sockserver();
 
-    bool spin();
+    bool spin(std::vector<acamera*>& cameras);
     bool init(const dims_t&);
     bool listen();
     void close();
     int  socket() {return _s.socket();}
     bool has_clients(const std::string& camname);
-    bool stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants);
+    bool stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants, acamera* cam);
     int  anyone_needs()const;
     void reg_cam(const std::string& camname);
 
@@ -82,8 +82,9 @@ private:
     void _clean();
     bool _stream_jpeg(imgclient* pc, const uint8_t* buff, uint32_t sz);
     bool _stream_video(imgclient* pc, const uint8_t* buff, uint32_t sz);
-    void _send_page(imgclient* pc, int ifmt);
+    void _send_page(imgclient* pc, int ifmt, acamera* pcam);
     void _check_and_keep(imgclient* pcli);
+    void _config(imgclient* cli, const char* req, std::vector<acamera*>& cameras);
 
     tcp_srv_sock _s;
     tcp_srv_sock _h;

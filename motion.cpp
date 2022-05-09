@@ -223,9 +223,28 @@ int mmotion::det_mov(const imglayout_t& imgl)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void mmotion::_calc_rects(int w, int h)
+void mmotion::get(int& pixnoise, int& pixdiv, int& imgscale)
 {
-	if(_w == w && _h == h)
+    pixnoise = _pixnoise;
+    pixdiv = _noisediv;
+    imgscale = _imgscale;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void mmotion::set(int pixnoise, int pixdiv, int imgscale)
+{
+    bool apply = false;
+
+    if(pixnoise>0)   {_pixnoise = pixnoise; apply=true;};
+    if(pixdiv>0)     {_noisediv = pixdiv; apply=true;};
+    if(_imgscale>0)  {_imgscale = imgscale; apply=true;};
+    _calc_rects(_w, _h, apply);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void mmotion::_calc_rects(int w, int h, bool force)
+{
+	if(_w == w && _h == h && force==false)
 		return;
 
 	int neww = w/_imgscale;
