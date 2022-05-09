@@ -17,9 +17,11 @@ class camevents
 public:
     camevents(const dims_t& wh, const Cbdler::Node& n);
 
-    const event_t&  proc_events(const imglayout_t& cam);
+    const event_t&  proc_events(const imglayout_t& cam, const std::string& name, uint8_t prep_pred);
     const uint8_t* getm(int& w, int& h, int& sz);
     void clean_events();
+    void set(const dims_t& mohilo, int pixnoise, int pixdiv, int imgscale);
+    void get(dims_t& mohilo, int& pixnoise, int& pixdiv, int& imgscale);
 
 private:
     int _darkaverage()const{return _mt ?  _mt->darkav() : 0;}

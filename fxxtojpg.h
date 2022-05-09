@@ -35,8 +35,8 @@ public:
     jpeger(int q, bool bw);
     virtual ~jpeger();
     bool init(const dims_t&);
-    int cam_to_jpg(imglayout_t& img);
-    int cam_to_bw(imglayout_t& img);
+    int cam_to_jpg(imglayout_t& img, const std::string&);
+    int cam_to_bw_for_motion(imglayout_t& img);
 
 private:
 	int _put_jpeg_yuv420p_memory(const uint8_t *pyuv420,int width, int height, int jpg_quality, struct tm *tm);

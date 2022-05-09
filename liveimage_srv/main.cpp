@@ -125,7 +125,6 @@ int main(int argc,char *argv[])
     GLOGI(strweb_time());
     Sigs();
     p.start_thread();
-
     l.spin(camport,cliport,loop_callback);
     p.stop_thread();
     delete pENC;

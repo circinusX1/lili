@@ -25,7 +25,25 @@ public:
 protected:
     int       _deliverChunk(const uint8_t* vf,int rec_off);
     size_t    _deliverFrame(int);
-
+    void    _save_seq(){
+        char fn[256];
+        ::snprintf(fn, 255,"/tmp/%s.seq" ,_name.c_str());
+        FILE *pf = ::fopen(fn,"wb");
+        if(pf){
+            ::fwrite(&_seq,1,sizeof(_seq),pf);
+            ::fclose(pf);
+        }
+    }
+    void   _load_seq(){
+        char fn[256];
+        _seq = 0;
+        ::snprintf(fn, 255,"/tmp/%s.seq" ,_name.c_str());
+        FILE *pf = ::fopen(fn,"rb");
+        if(pf){
+            ::fread(&_seq,1,sizeof(_seq),pf);
+            ::fclose(pf);
+        }
+    }
 protected:
     Fpip*       _pfpipe = nullptr;
     std::set<TcpWebSock*>  _pclis;

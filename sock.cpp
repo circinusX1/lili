@@ -425,15 +425,16 @@ int     tcp_sock::sendall(const unsigned char* buff, int length, int tout)
     int sent = 0;
 
     _error = 0;
-    if(tout==0)tout=9000;
+    if(tout==0) tout = 5000;
     while(length > 0 &&  tout-->0)
     {
         shot = ::send(_thesock,(char *)buff+sent, length,  MSG_NOSIGNAL);
         if(shot==-1){
             _error = errno;
-            break;
+            ::usleep(0x1FF);
+            continue;
         }
-        if(shot == 0 && tout!=9000)
+        if(shot == 0)
         {
             _error = errno;
             break;
@@ -443,7 +444,7 @@ int     tcp_sock::sendall(const unsigned char* buff, int length, int tout)
             length -= shot;
             sent   += shot;
         }
-        usleep(1000);
+        ::usleep(0x1FF);
     }
     return sent;
 }

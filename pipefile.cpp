@@ -8,10 +8,7 @@
 #include "pipefile.h"
 #include "cbconf.h"
 
-/**
- * @brief pipiefile::pipiefile
- * @param file
- */
+//////////////////////////////////////////////////////////////////////////////////////////////////*
 pipiefile::pipiefile(std::string file):_fd(0),_print(false)
 {
     std::string pipefile = file;
@@ -46,9 +43,7 @@ pipiefile::pipiefile(std::string file):_fd(0),_print(false)
     }
 }
 
-/**
- * @brief pipiefile::~pipiefile
- */
+///////////////////////////////////////////////////////////////////////////////////////////////////
 pipiefile::~pipiefile()
 {
     if(_fd)
@@ -57,13 +52,11 @@ pipiefile::~pipiefile()
     TRACE() << "delete pipe: "<< _fn << "\n";
 }
 
-/**
- * @brief LogOften
- */
+///////////////////////////////////////////////////////////////////////////////////////////////////
 static int LogOften=0;
 int pipiefile::stream(const uint8_t* buff,size_t maxsz)
 {
-    if(_fd)
+    if(_fd & maxsz)
     {
         size_t rv;
         size_t sent = 0;

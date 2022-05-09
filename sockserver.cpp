@@ -22,8 +22,8 @@
 #include "sockserver.h"
 #include "jencoder.h"
 #include "cbconf.h"
-
 #include "strutils.h"
+#include "acamera.h"
 
 extern bool __alive;
 
@@ -109,7 +109,7 @@ void sockserver::_check_and_keep(imgclient* pcli)
     }
 }
 
-bool sockserver::spin()
+bool sockserver::spin(std::vector<acamera*>& cameras)
 {
     fd_set  rd;
     int     ndfs = _s.socket();// _s.sock()+1;
@@ -141,7 +141,7 @@ bool sockserver::spin()
             if(_s.accept(*cs)>0)
             {
                 cs->_needs=0;
-                TRACE() <<"\r\n\r\n-------------------\r\nnew connection \n";
+                TRACE() <<"\n new connection \n";
                 // do we have a client form same ip ?
                 _check_and_keep(cs);
             }
@@ -185,7 +185,10 @@ bool sockserver::spin()
                                 break;
                             }
                         }
-
+                        if( strstr(req, "config") && iform == 0)
+                        {
+                            _config(s, req, cameras);
+                        }
                         if( strstr(req, "motion") && iform == 0)
                         {
                             s->_needs = WANTS_MOTION;
@@ -218,8 +221,14 @@ bool sockserver::spin()
                                 r+="</ul>";
                             }
                             int lrsp = ::snprintf(req,sizeof(req),HEADER_200,(int)r.length());
-                            if(s->send(req,lrsp)>0)
+                            if(s->send(req,lrsp)==lrsp)
+                            {
                                 s->send(r.c_str(), r.length());
+                            }
+                            else
+                            {
+                                ::usleep(1000);
+                            }
                             s->destroy();
                             _dirty = true;
                             TRACE() << "RSPONSE[" << r << "]\n";
@@ -280,15 +289,44 @@ AGAIN:
     _dirty=false;
 }
 
-void sockserver::_send_page(imgclient* pc, int ifmt)
+void sockserver::_send_page(imgclient* pc, int ifmt, acamera* pcam)
 {
-    char  image[512];
-    char  html[1024];
+    char    image[1024];
+    char    sett[800];
+    char    html[2048];
     int len;
+    dims_t  dims = {0,0};
+    int     pixnoise = 0;
+    int     pixdiv = 0;
+    int     moscale = 0;
+
+    pcam->get_motion(dims, pixnoise, pixdiv, moscale);
+
+    ::sprintf(sett,"<li><a href='http://%s/?%s&mohilo=%d-%d'>MOTION-HI-LO</a>\
+                    <li><a href='http://%s/?%s&monoise=%d'>MOTION-NOISE</a>\
+                    <li><a href='http://%s/?%s&modiv=%d'>MOTION-DIV</a>\
+                    <li><a href='http://%s/?%s&moscale=%d'>MOTION-SCALE</a>",
+                    _host.c_str(),
+                    pc->_camname.c_str(),
+                    dims.x,
+                    dims.y,
+                    _host.c_str(),
+                    pc->_camname.c_str(),
+                    pixnoise,
+                    _host.c_str(),
+                    pc->_camname.c_str(),
+                    pixdiv,
+                    _host.c_str(),
+                    pc->_camname.c_str(),
+                    moscale);
+
     if(ifmt==eFJPG)
     {
         len = ::sprintf(image,
-                        "<img width='640' src='http://%s/?stream&%s' />",_host.c_str(), pc->_camname.c_str());
+                        "<img width='640' src='http://%s/?stream&%s' /><hr />%s",
+                        _host.c_str(),
+                        pc->_camname.c_str(),
+                        sett);
     }
     else
     {
@@ -313,7 +351,7 @@ void sockserver::_send_page(imgclient* pc, int ifmt)
     TRACE() << "serving page [" << html << "]\r\n";
 }
 
-bool sockserver::stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants)
+bool sockserver::stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants, acamera* cam)
 {
     bool rv;
 
@@ -339,7 +377,7 @@ bool sockserver::stream_on(const uint8_t* buff, uint32_t sz, int ifmt, int wants
                 rv = this->_stream_video(s, buff, sz);
             break;
         case WANTS_HTML:
-            _send_page(s, ifmt);
+            _send_page(s, ifmt, cam);
             s->destroy();
             _dirty = true;
             break;
@@ -428,3 +466,27 @@ bool sockserver::init(const dims_t&)
 {
     return listen();
 }
+
+void sockserver::_config(imgclient* cli, const char* req, std::vector<acamera*>& cameras)
+{
+    for(const auto& a : cameras)
+    {
+        if(cli->_camname == a->name())
+        {
+            dims_t  mohilo = {-1,-1};
+            int     pixnoise = -1;
+            int     pixdiv = -1;
+            int     mscale = -1;
+            const char* ptok = ::strstr(req,"mohilo=");
+            if(ptok){ ::sscanf((req+7),"%d-%d",&mohilo.x, &mohilo.y); }
+            ptok = ::strstr(req,"monoise=");
+            if(ptok){::sscanf((req+8),"%d",&pixnoise);}
+            ptok = ::strstr(req,"modiv=");
+            if(ptok){::sscanf((req+6),"%d",&pixdiv);}
+            ptok = ::strstr(req,"moscale=");
+            if(ptok){::sscanf((req+8),"%d",&mscale);}
+            a->set_motion(mohilo, pixnoise, pixdiv, mscale);
+        }
+    }
+}
+

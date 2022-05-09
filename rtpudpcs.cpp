@@ -35,16 +35,17 @@ rtpudpcs::~rtpudpcs()
     delete[] _frame;
 }
 
+
 bool rtpudpcs::ok()const
 {
     return _ok;
 }
 
-int rtpudpcs::spin()
+int rtpudpcs::spin(event_t&)
 {
     int         rv;
     int         bytes1 = 0;
-
+    int         bytes2 = 0;
     rv  = _pool(_udp,_udpc);
     if(rv<0)
         return 0;
@@ -57,18 +58,40 @@ int rtpudpcs::spin()
     {
         // video port
         bytes1 = _udp.receive(_frame,MAX_BUFF);
-        if(bytes1>0){
-            printf("UDP1 %d bytes\n", bytes1);
-        }else{
-            bytes1=0;
+        if(bytes1){
+            printf("git frmo UDP1 %d bytes\n", bytes1);
         }
     }
     if(rv&2)
     {
-        // audio port ?
-        _udpc.receive(_frame+bytes1,MAX_BUFF-bytes1);
+        bytes2 = _udpc.receive(_frame+bytes1,MAX_BUFF-bytes1);
+        if(bytes2){
+            printf("git frmo UDP2 %d bytes\n", bytes2);
     }
-    return bytes1 /* no audio */;
+    }
+/*
+    char oct[8];
+    TRACE()<<"\n";
+    for(int i=0; i < 128; i++)
+    {
+        if(_frame[i]>=' '&&_frame[i]<='z')
+            sprintf(oct,"%c ", (int)_frame[i]);
+        else
+            sprintf(oct,"%c ", (int)'.');
+        TRACE()<<oct;
+        if(((i+1)%16)==0)TRACE()<<"\n";
+    }
+    TRACE()<<"\n";
+
+    for(int i=0; i < 128; i++)
+    {
+        sprintf(oct,"%02X ", (int)_frame[i]);
+        TRACE()<<oct;
+        if(((i+1)%16)==0)TRACE()<<"\n";
+    }
+    TRACE()<<"\n";
+*/
+    return bytes1+bytes2;
 }
 
 int rtpudpcs::_pool(udp_sock& s, udp_sock& c )

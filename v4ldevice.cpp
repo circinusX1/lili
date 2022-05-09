@@ -25,10 +25,12 @@
 #include "v4ldevice.h"
 #include "cbconf.h"
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 #define VIDEO_BUFFS 2
 #define MOTION_SZ   64
 
-v4ldevice::v4ldevice(const char* device, int x, int y)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+v4ldevice::v4ldevice(const char* device, int x, int y, int fps)
 {
     _sdevice = device;
     _curbuffer = 0;
@@ -37,13 +39,16 @@ v4ldevice::v4ldevice(const char* device, int x, int y)
     _fatal = false;
     for (int i = 0; i < MAX_BUFFERS; ++i)
         _buffers[i].start=0;
+   _fps = fps;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 v4ldevice::~v4ldevice()
 {
     close();
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 bool v4ldevice::open()
 {
     size_t diez = _sdevice.find('*');
@@ -157,7 +162,7 @@ bool v4ldevice::open()
             TRACE() << "error set frame interval " << _fps << "\n";
         }
         _fps = fint.parm.capture.timeperframe.denominator;
-        TRACE() << "FPS: recalculated due to camera limitations at: " << _fps << "\n";
+
     }
     uint32_t wmin = frmt.fmt.pix.width * 2;
     if (frmt.fmt.pix.bytesperline < wmin)
@@ -278,6 +283,7 @@ bool v4ldevice::open()
     return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void v4ldevice::close()
 {
     if(_device>0)
@@ -303,6 +309,7 @@ void v4ldevice::close()
     _device = 0;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 int v4ldevice::_ioctl(int request, void* argp)
 {
     int r = ::v4l2_ioctl(_device, request, argp);
@@ -313,6 +320,7 @@ int v4ldevice::_ioctl(int request, void* argp)
     return r;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
 {
     fd_set fds;

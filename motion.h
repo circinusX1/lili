@@ -40,11 +40,13 @@ public:
     uint8_t*  motionbuf()const{return _motionbufs[2];}
     int darkav()const{return _dark;}
     int det_mov(const imglayout_t& imgl);
+    void set(int pixnoise, int pixdiv, int imgscale);
+    void get(int& pixnoise, int& pixdiv, int& imgscale);
 
 private:
     int _det_mov_422(const imglayout_t& imgl);
     void _meter_show(uint8_t* pSeen);
-    void _calc_rects(int w, int h);
+    void _calc_rects(int w, int h, bool force=false);
     void _motion(uint8_t pix,
                 const uint8_t* base, uint8_t* pSeen, uint8_t* prowprev, uint8_t* prowcur,
                 int x, int y, int dx, int dy, int & pixels);
@@ -54,7 +56,7 @@ private:
     int       _h;
     int       _mw;
     int       _mh;
-    int       _motionsc = 4;
+    int       _imgscale = 4;
     uint8_t*  _motionbufs[3] = {nullptr, nullptr,nullptr};
     int       _mobuf_idx;
     int       _motionsz;
@@ -63,7 +65,7 @@ private:
     int       _dark;
     int       _noisediv=4;
     int       _mmeter;
-    int       _mdiff = 4;
+    int       _pixnoise = 4;
     rect_t    _inrect;
     rect_t    _outrect;
 };

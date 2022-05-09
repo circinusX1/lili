@@ -49,7 +49,7 @@ CliJpegSock::CliJpegSock(RawSock& o,
                                         (int)timestamp.tv_usec);
 
         TcpWebSock::snd((const uint8_t*)buffer,hl,0);
-        while(!::feof(pf))
+        while(!feof(pf))
         {
             int sz = ::fread(buffer, 1, 512, pf);
             if(sz)

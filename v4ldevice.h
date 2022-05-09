@@ -59,7 +59,7 @@ class v4ldevice
 {
 public:
 
-    v4ldevice(const char* device, int x, int y);
+    v4ldevice(const char* device, int x, int y, int fps);
     virtual ~v4ldevice();
 
     bool open();

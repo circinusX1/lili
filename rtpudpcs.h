@@ -5,7 +5,7 @@
 #include "sock.h"
 #include "lilitypes.h"
 
-#define MAX_BUFF   (4046)
+#define MAX_BUFF   (1024*4)
 
 class rtpudpcs
 {
@@ -13,7 +13,7 @@ public:
     rtpudpcs(int port);
     virtual ~rtpudpcs();
     bool ok()const;
-    int spin();
+    int spin(event_t& event);
     const uint8_t* frame()const{ return _frame;}
 
 protected:

@@ -1,5 +1,5 @@
 ///   EXPERIMENTAL
-
+#ifdef WITH_RTSP
 
 #include "mpeger.h"
 #include "cbconf.h"
@@ -138,3 +138,6 @@ uint32_t mpeger::convertBW(const uint8_t* uint8buf, int insz, int w, int h, cons
     (void)pjpeg;
     return 0;
 }
+
+
+#endif // WITH_RTSP

@@ -9,24 +9,21 @@ using namespace cimg_library;
 #include "motion.h"
 #include "cbconf.h"
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 mmotion::mmotion(const dims_t& wh, const Cbdler::Node& n):_w(wh.x),_h(wh.x)
 {
 	_noisediv = n["noise_div"].to_int();
-	_motionsc = n["motion_scale"].to_int();
+	_imgscale = n["img_scale"].to_int();
 	_inrect   = n["in_rect"].to_rect();
 	_outrect  = n["out_rect"].to_rect();
-	_mdiff    = n["motion_diff"].to_int() * 2.55;
-
-	if(_motionsc<1)
-		_motionsc=1;
-	else if(_motionsc>16)
-		_motionsc=16;
-
+	_pixnoise = n["pix_noise"].to_int() * 2.55;
+	if(_imgscale<1)				_imgscale=1;
+	else if(_imgscale>16)		_imgscale=16;
 	if(_noisediv<4)_noisediv=4;
 	_calc_rects(wh.x,wh.y);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 mmotion::~mmotion()
 {
     delete []_motionbufs[0];
@@ -34,7 +31,7 @@ mmotion::~mmotion()
     delete []_motionbufs[2];
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void mmotion::_motion(uint8_t pix,
                      const uint8_t* base_py, uint8_t* pSeen, uint8_t* prowprev, uint8_t* prowcur,
                       int x, int y, int dx, int dy, int & pixels)
@@ -46,11 +43,11 @@ void mmotion::_motion(uint8_t pix,
     *(prowcur + (y * _mw) + x) = Y;       // build new video buffer
     uint8_t YP = *(prowprev+(y  * _mw) + (x));   // old buffer pixel
     int diff = abs(Y - YP);
-    if(diff < _mdiff)
+    if(diff < _pixnoise)
     {
-        diff=Y;                         // black no move
+        diff = Y/2;                         // black no move
     }
-    else if(diff>_mdiff)
+    else if(diff>_pixnoise)
     {
         diff=255; //move
         ++_moves;
@@ -60,18 +57,19 @@ void mmotion::_motion(uint8_t pix,
 
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 int mmotion::_det_mov_422(const imglayout_t& imgl)
 {
     uint8_t* pSeen = _motionbufs[2];
-    uint8_t* prowprev = _motionbufs[_mobuf_idx ? 0 : 1];
-    uint8_t* prowcur = _motionbufs[_mobuf_idx ? 1 : 0];
+    uint8_t* prowprev = _motionbufs[_mobuf_idx];
+    uint8_t* prowcur = _motionbufs[!_mobuf_idx];
     const uint8_t* fmt420 = imgl._camp;
     const uint8_t* base_py = fmt420;
     int dx = imgl._dims.x / _mw; if(dx==0)dx=1;
     int dy = imgl._dims.y / _mh; if(dy==0)dy=1;
     int               pixels = 0;
 
-    if(_mdiff<1){  _mdiff=4; }
+    if(_pixnoise<1){  _pixnoise=4; }
     _dark  = 0;
     _moves = 0;
     for (int y=1; y <_mh-dy; y++)             //height
@@ -99,7 +97,7 @@ int mmotion::_det_mov_422(const imglayout_t& imgl)
     return _moves;
 }
 
-//decrease mh in 3 seconds
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void mmotion::_meter_show(uint8_t* pSeen)
 {
     static time_t  last = gtc();
@@ -158,6 +156,7 @@ void mmotion::_meter_show(uint8_t* pSeen)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 // to do image is smaller from digoo cam TODO
 int mmotion::det_mov(const imglayout_t& imgl)
 {
@@ -180,8 +179,8 @@ int mmotion::det_mov(const imglayout_t& imgl)
             img.load_jpeg_buffer(p, len, components);// .get_RGBtoxyY();
 
             uint8_t* pSeen = _motionbufs[2];
-            uint8_t* prowprev = _motionbufs[_mobuf_idx ? 0 : 1];
-            uint8_t* prowcur = _motionbufs[_mobuf_idx ? 1 : 0];
+            uint8_t* prowprev = _motionbufs[_mobuf_idx];
+            uint8_t* prowcur = _motionbufs[!_mobuf_idx];
             int pixels = 0;
 
 
@@ -190,7 +189,7 @@ int mmotion::det_mov(const imglayout_t& imgl)
             int neww = _mw * components;
             //dx*=3;
 
-            if(_mdiff<1){  _mdiff=4; }
+            if(_pixnoise<1){  _pixnoise=4; }
             for (int y = 1; y <_mh-dy; y++)             //height
             {
                 for (int x = 1; x < neww-x; x++)       //width
@@ -224,21 +223,40 @@ int mmotion::det_mov(const imglayout_t& imgl)
     return _moves;
 }
 
-
-void mmotion::_calc_rects(int w, int h)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void mmotion::get(int& pixnoise, int& pixdiv, int& imgscale)
 {
-	if(_w == w && _h == h)
+    pixnoise = _pixnoise;
+    pixdiv = _noisediv;
+    imgscale = _imgscale;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void mmotion::set(int pixnoise, int pixdiv, int imgscale)
+{
+    bool apply = false;
+
+    if(pixnoise>0)   {_pixnoise = pixnoise; apply=true;};
+    if(pixdiv>0)     {_noisediv = pixdiv; apply=true;};
+    if(_imgscale>0)  {_imgscale = imgscale; apply=true;};
+    _calc_rects(_w, _h, apply);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void mmotion::_calc_rects(int w, int h, bool force)
+{
+	if(_w == w && _h == h && force==false)
 		return;
 
-	int neww = w/_motionsc;
-	int newh = h/_motionsc;
+	int neww = w/_imgscale;
+	int newh = h/_imgscale;
 	_w = w;
 	_h = h;
 
 	if(neww != _mw || newh != _mh)
 	{
-		_mw = w/_motionsc;
-		_mh = h/_motionsc;
+		_mw = w/_imgscale;
+		_mh = h/_imgscale;
 		if(_mw==0||_mh==0){
 			return;
 		}
@@ -253,14 +271,14 @@ void mmotion::_calc_rects(int w, int h)
 		if(_outrect.X >= _w) _outrect.X=_w;
 		if(_outrect.Y >= _h) _outrect.Y=_h;
 
-		_outrect.x/=_motionsc;
-		_outrect.y/=_motionsc;
-		_outrect.X/=_motionsc;
-		_outrect.Y/=_motionsc;
-		_inrect.x/=_motionsc;
-		_inrect.y/=_motionsc;
-		_inrect.X/=_motionsc;
-		_inrect.Y/=_motionsc;
+		_outrect.x/=_imgscale;
+		_outrect.y/=_imgscale;
+		_outrect.X/=_imgscale;
+		_outrect.Y/=_imgscale;
+		_inrect.x/=_imgscale;
+		_inrect.y/=_imgscale;
+		_inrect.X/=_imgscale;
+		_inrect.Y/=_imgscale;
 
 		delete[] _motionbufs[0];
 		delete[] _motionbufs[1];

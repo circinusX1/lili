@@ -30,7 +30,7 @@ camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
     _run_app        = n["run_app"].value();
     _movementintertia = 0;
     _firstimage = 0;
-    if(_mohilo.x)
+    if(_mohilo.x && _mohilo.y)
     {
         _mt = new mmotion(wh, n);
     }
@@ -65,10 +65,13 @@ const uint8_t* camevents::getm(int& w, int& h, int& sz)
     return nullptr;
 }
 
-
-const event_t&  camevents::proc_events(const imglayout_t& imgl)
+const event_t&  camevents::proc_events(const imglayout_t& imgl,
+                                        const std::string& name,
+                                        uint8_t prep_pred)
 {
     uint32_t now =  gtc();
+
+    _event.predicate |= prep_pred;
     if(now - _tickmove > _inertiiaitl)
     {
         if(_mt){
@@ -169,9 +172,33 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl)
     return _event;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void camevents::clean_events()
 {
     _event.movepix = 0;
     _event.predicate = 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void camevents::set(const dims_t& mohilo, int pixnoise, int pixdiv, int imgscale)
+{
+    if(_mt)
+    {
+        if(mohilo.x > 0){
+            _mohilo = mohilo;
+        }
+        _mt->set(pixnoise, pixdiv, imgscale);
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void camevents::get(dims_t& mohilo, int& pixnoise, int& pixdiv, int& imgscale)
+{
+    if(_mt)
+    {
+         mohilo = _mohilo;
+        _mt->get(pixnoise, pixdiv, imgscale);
+    }
+
 }

@@ -29,6 +29,7 @@ SOURCES += \
     ../pipefile.cpp \
     ../rtpudpcs.cpp \
     ../rtspcam.cpp \
+    ../rtspproto.cpp \
     ../sock.cpp \
     ../sockserver.cpp \
     ../v4ldevice.cpp \
@@ -71,6 +72,7 @@ HEADERS += \
     ../pipefile.h \
     ../rtpudpcs.h \
     ../rtspcam.h \
+    ../rtspproto.h \
     ../sock.h \
     ../sockserver.h \
     ../strutils.h \
