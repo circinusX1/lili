@@ -201,6 +201,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
         ::snprintf(fn, sizeof(fn),"%s:%s,%d",str_time(), _name.c_str(), _header.event.movepix);
         img.draw_text(0,0, fn, purple,black,1,26);
         snprintf(fn,sizeof(fn),"%s/img_%05zu.jpg",_fpath.c_str(), _seq++);
+        GLOGI( "Saving " << fn );
         img.save(fn);
         if((int)_seq > (int)_maxseq)
         {
