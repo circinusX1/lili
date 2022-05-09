@@ -192,17 +192,27 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
 
     if(!_recordname.empty() && _header.event.predicate & CMD_RECORD)
     {
-        char      fn[256];
+        //FILE*   pf;
+        char    fn[256];
         constexpr unsigned char purple[] = { 255, 0, 0 };
         constexpr unsigned char black[] = { 0, 0, 0 };
 
         CImg<unsigned char> img;
         img.load_jpeg_buffer(vf, imgsz);
         ::snprintf(fn, sizeof(fn),"%s:%s,%d",str_time(), _name.c_str(), _header.event.movepix);
+
         img.draw_text(0,0, fn, purple,black,1,26);
         snprintf(fn,sizeof(fn),"%s/img_%05zu.jpg",_fpath.c_str(), _seq++);
         GLOGI( "Saving " << fn );
         img.save(fn);
+        /*
+        pf = ::fopen(fn,"wb");
+        if(pf)
+        {
+            ::fwrite(bf,1,imgsz, pf);
+            ::fclose(pf);
+        }
+        */
         if((int)_seq > (int)_maxseq)
         {
             if(!_onmaxseq.empty())
@@ -213,6 +223,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
                 shell += this->name() + " &";
                 GLOGD("executing" << shell);
                 ::system(shell.c_str());
+                //_tm->run( namex,_onmaxseq,where,namex);
             }
             _seq = 0; // to do wait for taks then reset to 0
         }

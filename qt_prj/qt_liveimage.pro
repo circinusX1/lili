@@ -47,7 +47,8 @@ DISTFILES += \
     ../../../../var/www/html/stream2.php \
     ../../../../var/www/html/upload.php \
     ../CMakeLists.txt \
-    ../liveimage.konf
+    ../liveimage.konf \
+    ../liveimage.sample_konf
 
 HEADERS += \
     ../CImg.h \
@@ -61,6 +62,7 @@ HEADERS += \
     ../jencoder.cpp \
     ../jencoder.h \
     ../jencoder.h \
+    ../jpeg_buffer.h \
     ../jpeghttpcam.h \
     ../lilitypes.h \
     ../localcam.h \

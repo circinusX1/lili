@@ -218,8 +218,8 @@ bool sockserver::spin()
                                 r+="</ul>";
                             }
                             int lrsp = ::snprintf(req,sizeof(req),HEADER_200,(int)r.length());
-                            s->send(req,lrsp);
-                            s->send(r.c_str(), r.length());
+                            if(s->send(req,lrsp)>0)
+                                s->send(r.c_str(), r.length());
                             s->destroy();
                             _dirty = true;
                             TRACE() << "RSPONSE[" << r << "]\n";

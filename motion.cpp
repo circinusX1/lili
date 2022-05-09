@@ -18,12 +18,13 @@ mmotion::mmotion(const dims_t& wh, const Cbdler::Node& n):_w(wh.x),_h(wh.x)
 	_outrect  = n["out_rect"].to_rect();
 	_mdiff    = n["motion_diff"].to_int() * 2.55;
 
-	if(_motionsc<2) _motionsc=2;
-	else if(_motionsc>16) _motionsc=16;
+	if(_motionsc<1)
+		_motionsc=1;
+	else if(_motionsc>16)
+		_motionsc=16;
 
 	if(_noisediv<4)_noisediv=4;
 	_calc_rects(wh.x,wh.y);
-	_recalc = false;
 }
 
 mmotion::~mmotion()
@@ -33,28 +34,49 @@ mmotion::~mmotion()
     delete []_motionbufs[2];
 }
 
+
+void mmotion::_motion(uint8_t pix,
+                     const uint8_t* base_py, uint8_t* pSeen, uint8_t* prowprev, uint8_t* prowcur,
+                      int x, int y, int dx, int dy, int & pixels)
+{
+    uint8_t Y  = base_py ? *(base_py + ((y*dy)  * _w) + (x*dx)): pix; /// curent pixel
+    _dark += uint32_t(Y);		   //  noise and dark
+    Y /= _noisediv;
+    Y *= _noisediv;
+    *(prowcur + (y * _mw) + x) = Y;       // build new video buffer
+    uint8_t YP = *(prowprev+(y  * _mw) + (x));   // old buffer pixel
+    int diff = abs(Y - YP);
+    if(diff < _mdiff)
+    {
+        diff=Y;                         // black no move
+    }
+    else if(diff>_mdiff)
+    {
+        diff=255; //move
+        ++_moves;
+    }
+    *(pSeen + (y * _mw)+x) = (uint8_t)diff;
+    ++pixels;
+
+}
+
 int mmotion::_det_mov_422(const imglayout_t& imgl)
 {
-
     uint8_t* pSeen = _motionbufs[2];
     uint8_t* prowprev = _motionbufs[_mobuf_idx ? 0 : 1];
     uint8_t* prowcur = _motionbufs[_mobuf_idx ? 1 : 0];
-    int               dx = _w / _mw;
-    int               dy = _h / _mh;
-    int               pixels = 0;
-    uint8_t           Y,YP ;
-
     const uint8_t* fmt420 = imgl._camp;
-    size_t len = imgl._caml;
-    EIMG_FMT fmt = imgl._camf;
     const uint8_t* base_py = fmt420;
+    int dx = imgl._dims.x / _mw; if(dx==0)dx=1;
+    int dy = imgl._dims.y / _mh; if(dy==0)dy=1;
+    int               pixels = 0;
 
     if(_mdiff<1){  _mdiff=4; }
     _dark  = 0;
     _moves = 0;
-    for (int y= 0; y <_mh-dy; y++)             //height
+    for (int y=1; y <_mh-dy; y++)             //height
     {
-        for (int x = 0; x < _mw-dx; x++)       //width
+        for (int x = 1; x < _mw-dx; x++)       //width
         {
             if( _inrect.x!= _inrect.X){
                 if(x<_inrect.x)continue;
@@ -67,38 +89,13 @@ int mmotion::_det_mov_422(const imglayout_t& imgl)
                         y > _outrect.y && y < _outrect.Y)
                     continue;
             }
+            _motion(0, base_py, pSeen, prowprev, prowcur, x-1, y-1, dx, dy, pixels);
 
-            Y  = *(base_py + ((y*dy)  * _w) + (x*dx)); /// curent pixel
-
-            _dark += uint32_t(Y);		   //  noise and dark
-            Y /= _noisediv; Y *= _noisediv;
-
-            *(prowcur + (y * _mw) + x) = Y;       // build new video buffer
-            YP = *(prowprev+(y  * _mw) + (x));   // old buffer pixel
-
-            int diff = abs(Y - YP);
-
-            if(diff < _mdiff)
-            {
-                diff=Y;                         // black no move
-            }
-            else if(diff>_mdiff)
-            {
-                diff=255; //move
-                ++_moves;
-            }
-            *(pSeen + (y * _mw)+x) = (uint8_t)diff;
-            ++pixels;
         }
-
     }
-
-    //[x,y,X,Y] draw a rect
-
     _meter_show(pSeen);
     _dark /= pixels;
     _mobuf_idx = !_mobuf_idx;
-    //acale moves to (uint8-10)
     return _moves;
 }
 
@@ -136,13 +133,14 @@ void mmotion::_meter_show(uint8_t* pSeen)
             *(pSeen + (_outrect.Y * _mw) + x) = (uint8_t)128;
         }
     }
-    // show spin percentage on left as bar
+    // show percentage on left as bar
     int percentage = std::min(100,_moves);
     if(percentage > _mmeter)
         _mmeter = percentage;
     else if(_mmeter>0){
         time_t now = gtc();
         _mmeter -= ((now-last)/24 + 1);
+        if(_mmeter<0)_mmeter=0;
         last = now;
     }
     if(_mmeter>0)
@@ -177,22 +175,26 @@ int mmotion::det_mov(const imglayout_t& imgl)
         }
         else if(fmt==eFJPG && ::is_jpeg(p,len))
         {
+            int components = 1;
             CImg<unsigned char> img;
-            img.load_jpeg_buffer(p, len);
+            img.load_jpeg_buffer(p, len, components);// .get_RGBtoxyY();
 
             uint8_t* pSeen = _motionbufs[2];
             uint8_t* prowprev = _motionbufs[_mobuf_idx ? 0 : 1];
             uint8_t* prowcur = _motionbufs[_mobuf_idx ? 1 : 0];
             int pixels = 0;
-            int dx = img.width() / _mw;
-            int dy = img.height() / _mh;
-            uint8_t  Y,YP ;
-            if(_mdiff<1){  _mdiff=4; }
-            for (int y=1; y <_mh-dy; y++)             //height
-            {
-                for (int x = 1; x < _mw-x; x++)       //width
-                {
 
+
+            int dx = img.width() / _mw; if(dx==0)dx=1;
+            int dy = img.height() / _mh; if(dy==0)dy=1;
+            int neww = _mw * components;
+            //dx*=3;
+
+            if(_mdiff<1){  _mdiff=4; }
+            for (int y = 1; y <_mh-dy; y++)             //height
+            {
+                for (int x = 1; x < neww-x; x++)       //width
+                {
                     if( _inrect.x!= _inrect.X){
                         if(x<_inrect.x)continue;
                         if(x>_inrect.X)continue;
@@ -204,24 +206,9 @@ int mmotion::det_mov(const imglayout_t& imgl)
                                 y > _outrect.y && y < _outrect.Y)
                             continue;
                     }
-
-                    Y = img(x,y);
-                    _dark += uint32_t(Y);
-                    Y /= _noisediv; Y *= _noisediv;
-                    *(prowcur + (y * _mw) + x) = Y;       // build new video buffer
-                    YP = *(prowprev+(y  * _mw) + (x));   // old buffer pixel
-                    int diff = abs(Y - YP);
-                    if(diff < _mdiff)
-                    {
-                        diff=Y;                         // black no move
-                    }
-                    else if(diff>_mdiff)
-                    {
-                        diff=255; //move
-                        ++_moves;
-                    }
-                    *(pSeen + (y * _mw)+x) = (uint8_t)diff;
-                    ++pixels;
+                    _motion(img(x*dx, y*dy),
+                            nullptr, pSeen, prowprev,
+                            prowcur, x-1, y-1, dx, dy, pixels);
                 }
             }
 
@@ -240,11 +227,13 @@ int mmotion::det_mov(const imglayout_t& imgl)
 
 void mmotion::_calc_rects(int w, int h)
 {
-	if(_recalc)return;
-	_recalc = true;
+	if(_w == w && _h == h)
+		return;
 
 	int neww = w/_motionsc;
 	int newh = h/_motionsc;
+	_w = w;
+	_h = h;
 
 	if(neww != _mw || newh != _mh)
 	{

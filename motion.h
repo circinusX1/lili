@@ -45,6 +45,9 @@ private:
     int _det_mov_422(const imglayout_t& imgl);
     void _meter_show(uint8_t* pSeen);
     void _calc_rects(int w, int h);
+    void _motion(uint8_t pix,
+                const uint8_t* base, uint8_t* pSeen, uint8_t* prowprev, uint8_t* prowcur,
+                int x, int y, int dx, int dy, int & pixels);
 
 private:
     int       _w;
@@ -63,7 +66,6 @@ private:
     int       _mdiff = 4;
     rect_t    _inrect;
     rect_t    _outrect;
-    bool      _recalc = false;
 };
 
 

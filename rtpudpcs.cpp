@@ -44,7 +44,6 @@ int rtpudpcs::spin()
 {
     int         rv;
     int         bytes1 = 0;
-    int         bytes2 = 0;
 
     rv  = _pool(_udp,_udpc);
     if(rv<0)
@@ -66,7 +65,7 @@ int rtpudpcs::spin()
     }
     if(rv&2)
     {
-        // audio port
+        // audio port ?
         _udpc.receive(_frame+bytes1,MAX_BUFF-bytes1);
     }
     return bytes1 /* no audio */;
