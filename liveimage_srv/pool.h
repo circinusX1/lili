@@ -10,9 +10,9 @@
 #include "os.h"
 
 #ifdef DEBUG
-#define KILL_TIME           16
+#define KILL_TIME           15
 #else
-#define KILL_TIME           21
+#define KILL_TIME           15
 #endif
 #define CHECK_CLIENTS_TOUT  11
 #define CHECK_CLIENT_COUNT  51
