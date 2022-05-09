@@ -156,7 +156,7 @@ bool sockserver::spin(std::vector<acamera*>& cameras)
                 char req[512] = {0};
 
                 int rt = s->receive(req,511);
-                if(rt==0)       //con closed
+                if(rt==0)//con closed
                 {
                     TRACE() << "client closed connection \r\n";
                     s->destroy();
@@ -294,7 +294,7 @@ void sockserver::_send_page(imgclient* pc, int ifmt, acamera* pcam)
     char    image[1024];
     char    sett[800];
     char    html[2048];
-    int     len;
+    int len;
     dims_t  dims = {0,0};
     int     pixnoise = 0;
     int     pixdiv = 0;

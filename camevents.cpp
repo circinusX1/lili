@@ -8,18 +8,21 @@
                            const rect_t& inr,
                            const rect_t& outr):_mt(wh.x, wh.y, inr, outr)
                            */
-///////////////////////////////////////////////////////////////////////////////////////////////////
+
 camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
 {
     //int motionlow, int motionhi, const dims_t& wh
     _robinserve     = 0x1;
     _mpgnewfile     = 0;
+    _lapsetick      =  gtc();
+    _tickmove       =  gtc();
     _event          = {0,0};
     _mohilo         = n["motion"].to_dims();
     _innertia       = n["innertia"].to_int(0);
     _inertiiaitl    = n["innertia"].to_int(1);
-    _lapsetime      = n["time_lapse"].to_int();
+    _time_lapse     = n["time_lapse"].to_int();
     _dark_lapse     = n["dark_comp"].to_int(0);
+    _dark_motion    = n["dark_comp"].to_int(1);
     _save_loc       = n["save_loc"].value();
     _max_size       = n["max_movie"].to_int();
     _on_max_files   = n["on_max_files"].to_int(0);
@@ -31,12 +34,29 @@ camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
     {
         _mt = new mmotion(wh, n);
     }
+
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+int camevents::_proc_events(const imglayout_t& imgl)
+{
+    if(_mt)
+    {
+        if(imgl._camf==e422){
+            int movedpix =  _mt->det_mov(imgl);
+            if(movedpix > _mohilo.x && movedpix < _mohilo.y)
+            {
+                return uint8_t(movedpix);
+            }
+        }
+    }
+    return 0;
+}
+
+
 const uint8_t* camevents::getm(int& w, int& h, int& sz)
 {
     if(_mt){
+        _lasttime = time(0);
         w  = _mt->getw();
         h  = _mt->geth();
         sz = w * h;
@@ -45,25 +65,17 @@ const uint8_t* camevents::getm(int& w, int& h, int& sz)
     return nullptr;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
 const event_t&  camevents::proc_events(const imglayout_t& imgl,
-                                        std::string& name, uint8_t prep_pred)
+                                        const std::string& name,
+                                        uint8_t prep_pred)
 {
-    time_t diffc  =  (imgl._now - _movetime) + 1;
-    time_t diffl  =  imgl._now - _lapsetime;
+    uint32_t now =  gtc();
 
     _event.predicate |= prep_pred;
-
-    if(diffc > _inertiiaitl)
+    if(now - _tickmove > _inertiiaitl)
     {
-        _movetime = imgl._now;
-
         if(_mt){
             _event.movepix = _mt->det_mov(imgl);
-            if(_event.movepix  < _mohilo.x || _event.movepix  > _mohilo.y)
-            {
-                _event.movepix = 0;
-            }
         }
 
         if( _event.movepix )
@@ -72,30 +84,29 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
         }
         if(_movementintertia > 0)
         {
-            _movementintertia--;
+            --_movementintertia;
             if(_event.movepix==0){
-                _event.movepix = (_mohilo.x+1);
+                _event.movepix = _movementintertia;
             }
         }
         if(_event.movepix){
+            TRACE() << "movpix = " << _event.movepix << "\n";
             _event.predicate |= EVT_MOTION;
         }else{
             _event.predicate &= ~EVT_MOTION;
         }
+        _tickmove = now;
     }
 
-    if(_lapsetime)
+    if(_time_lapse > 0)
     {
-        if(diffl > (time_t)_lapsetime)
+        if((now - _lapsetick) > (uint32_t)_time_lapse)
         {
             _event.predicate |= EVT_TLAPSE;
-        }
-        else
-        {
+            _lapsetick = now;
+        }else{
             _event.predicate &= ~EVT_TLAPSE;
         }
-        _lapsetime = imgl._now;
-        TRACE()<< name << " timelaspe\n";
     }
 
     if(_mt && _mt->darkav() < _dark_lapse)
@@ -104,14 +115,10 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
         _event.predicate &= ~EVT_MOTION;
     }
 
-    if(_event.predicate & EVT_MOTION)
-    {
-        TRACE()<< name << " move:" << _event.movepix << "\n";
-    }
-
     if((_event.predicate & EVT_JUST_MOTION) != 0){
         ::system(_run_app.c_str());
     }
+
 
     if((_event.predicate & FLAG_SAVE && _event.movepix) ||
             _event.predicate & FLAG_FORCE_SAVE)

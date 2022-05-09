@@ -42,6 +42,7 @@ class acamera
 public:
     acamera(const dims_t& wh, const std::string& name, const std::string& loc, const Cbdler::Node& n);
     virtual ~acamera();
+
     virtual bool init(const dims_t&)=0;
     virtual size_t get_frame(imglayout_t& i)=0;
     virtual bool spin()=0;

@@ -5,7 +5,7 @@
 #include "lilitypes.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-#define EXTRA_SPACE 	2048
+#define EXTRA_SPACE 2048
 #define MAX_NO_FRM_MS	4000
 extern bool __alive;
 
@@ -40,6 +40,7 @@ void webcast::stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
                      const std::string& name, const event_t& event, EIMG_FMT eift)
 {
     AutoLock a(&_mut);
+
     if(_frame==nullptr){
         _frame = new uint8_t[len + EXTRA_SPACE];
         _buffsz = len + EXTRA_SPACE;
@@ -77,6 +78,7 @@ void webcast::thread_main()
     parseURL(url, scheme,
              sizeof(scheme), host, sizeof(host),
              &port, path, sizeof(path));
+
     ::strcat(url,_name.c_str());
 
     while(!this->osthread::is_stopped() && __alive)
@@ -107,9 +109,9 @@ void webcast::kill()
 #define CHECK_SEND(data_, dlen_)                                                    \
     by=_s.sendall((const uint8_t*)data_, (int)dlen_);                               \
     if(by!=(int)dlen_)                                                              \
-    {                                                                               \
+{                                                                                   \
         TRACE() << "SEND ERROR << "<< by <<" bytes sent != "<< dlen_ <<", errno:"<< errno <<"\n";    \
-        goto DONE;                                                                  \
+    goto DONE;                                                                      \
     }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +121,7 @@ void webcast::_go_streaming(const char* host, int port)
     int             frm_intl = 1000 / (1+_cast_fps);
     bool            needsframe = false;
     LiFrmHdr        jhdr;
-    int             noframe=0;
+    int             noframe = 0;
 
     _s.destroy();
     _s.pre_set(8912,4096);
@@ -130,29 +132,30 @@ void webcast::_go_streaming(const char* host, int port)
            ::usleep(0x1FFFF);
         }
         else{
+            TRACE() << "cam cannot connect "<< host << port <<"\r\n";
             goto DONE;
         }
         if(_s.isopen())
         {
-            do{
+             do{
                 AutoLock a(&_mut);
                 TRACE() << "Event move: " << _hdr.event.movepix << "\r\n";
                 jhdr = _hdr;
             }while(0);
 
-            jhdr.len = 0;
+             jhdr.len = 0;
             jhdr.random = rand();
             _enc.encrypt(jhdr.random, jhdr.challange);
             CHECK_SEND(&jhdr, sizeof(jhdr));
            ::msleep(256);
             while(by && _s.isopen() && __alive && noframe < MAX_NO_FRM_MS)
             {
-                if(_hdr.insync)
+                 if(_hdr.insync)
                 {
                     needsframe = false;
                     TRACE() << "WAITING \r\n" ;
                     by = _s.receiveall((uint8_t*)&jhdr, sizeof(jhdr));
-                    if(by != sizeof(jhdr)) {
+                    if(by!=sizeof(jhdr)){
                         TRACE() << "REC ERROR " << by <<", "<< _s.error() << "\n";
                         goto DONE;
                     }
@@ -169,7 +172,7 @@ void webcast::_go_streaming(const char* host, int port)
                     AutoLock a(&_mut);
                     if(_hdr.len){
                         CHECK_SEND(&_hdr, sizeof(_hdr));
-                        CHECK_SEND(_frame, _hdr.len);
+                        CHECK_SEND(_frame, _hdr.len)
                         noframe = 0;
                     }else{
                         noframe += frm_intl;

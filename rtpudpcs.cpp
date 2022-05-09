@@ -46,7 +46,7 @@ int rtpudpcs::spin(event_t&)
     int         rv;
     int         bytes1 = 0;
     int         bytes2 = 0;
-    rv = _pool(_udp,_udpc);
+    rv  = _pool(_udp,_udpc);
     if(rv<0)
         return 0;
     if(rv==0) //closed remote not reached
@@ -56,6 +56,7 @@ int rtpudpcs::spin(event_t&)
     }
     if(rv&1)
     {
+        // video port
         bytes1 = _udp.receive(_frame,MAX_BUFF);
         if(bytes1){
             printf("git frmo UDP1 %d bytes\n", bytes1);
@@ -66,7 +67,7 @@ int rtpudpcs::spin(event_t&)
         bytes2 = _udpc.receive(_frame+bytes1,MAX_BUFF-bytes1);
         if(bytes2){
             printf("git frmo UDP2 %d bytes\n", bytes2);
-        }
+    }
     }
 /*
     char oct[8];

@@ -6036,9 +6036,9 @@ namespace cimg_library_suffixed {
       cimg::mutex(4,0);
     }
 
-    inline void srand(const cimg_uint64 _seed) {
+    inline void srand(const cimg_uint64 seed) {
       cimg::mutex(4);
-      cimg::rng() = _seed;
+      cimg::rng() = seed;
       cimg::mutex(4,0);
     }
 
@@ -21599,7 +21599,7 @@ namespace cimg_library_suffixed {
               _cimg_mp_scalar1(mp_sqrt,arg1);
             }
 
-            if (!std::strncmp(ss,"srand(",6)) { // Set RNG _seed
+            if (!std::strncmp(ss,"srand(",6)) { // Set RNG seed
               _cimg_mp_op("Function 'srand()'");
               arg1 = ss6<se1?compile(ss6,se1,depth1,0,bloc_flags):~0U;
               if (arg1!=~0U) { _cimg_mp_check_type(arg1,1,1,0); _cimg_mp_scalar1(mp_srand,arg1); }
@@ -39998,7 +39998,7 @@ namespace cimg_library_suffixed {
       bool is_px, is_nx, is_py, is_ny, is_pz, is_nz;
       const bool is_3d = _depth>1;
 
-      // Find _seed points and insert them in priority queue.
+      // Find seed points and insert them in priority queue.
       unsigned int nb_seeds = 0;
       const T *ptrs = _data;
       cimg_forXYZ(*this,x,y,z) if (*(ptrs++)) { // 3D version

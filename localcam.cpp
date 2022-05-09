@@ -45,16 +45,16 @@ size_t localcam::get_frame(imglayout_t& i)
     i._caml = 0;
     if(now - _fetchtime >= _interval)
     {
-        bool fatal = false;
-        int imgsz = 0;
-        i._camp = _dev->read(_img_size.x, _img_size.y, imgsz, fatal);
-        if(fatal || imgsz==0){
-            return 0;
-        }
-        i._camf    = e422;
-        i._dims.x  = _img_size.x;
-        i._dims.y  = _img_size.y;
-        i._caml    = imgsz;
+    bool fatal = false;
+    int imgsz = 0;
+    i._camp = _dev->read(_img_size.x, _img_size.y, imgsz, fatal);
+    if(fatal || imgsz==0){
+        return 0;
+    }
+    i._camf = e422;
+    i._dims.x = _img_size.x;
+    i._dims.y = _img_size.y;
+    i._caml = imgsz;
         _fetchtime = now;
     }
     return (size_t)i._caml;

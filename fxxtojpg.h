@@ -35,7 +35,7 @@ public:
     jpeger(int q, bool bw);
     virtual ~jpeger();
     bool init(const dims_t&);
-    int cam_to_jpg(imglayout_t& img, const std::string& name);
+    int cam_to_jpg(imglayout_t& img, const std::string&);
     int cam_to_bw_for_motion(imglayout_t& img);
 
 private:

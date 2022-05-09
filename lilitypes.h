@@ -1,17 +1,18 @@
 #ifndef _LILITYPES_H_
 #define _LILITYPES_H_
 
-#include <stdio.h>
 #include <assert.h>
-#include <time.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/time.h>
 
 
 #define     INITIAL_LEN     32768
 #define     STEP_LEN        4096
 
-#define     PACK_ALIGN_1   __attribute__((packed, aligned(1)))
+
+#define          PACK_ALIGN_1   __attribute__((packed, aligned(1)))
 
 
 struct rect_t{
@@ -138,7 +139,6 @@ inline bool is_jpeg(const uint8_t* pb, int len){
     return len>10 && pb[0]==0xFF && pb[6]=='J' && pb[9]=='F';
 }
 
-
 struct imglayout_t{
     imglayout_t(){::memset(this,0,sizeof(*this));}
     const uint8_t *_camp = nullptr;
@@ -149,7 +149,6 @@ struct imglayout_t{
     EIMG_FMT       _jpgf = eFJPG;
     dims_t         _dims = {0,0};
     time_t         _now;
-    int            _acum = 0;
 };
 
 

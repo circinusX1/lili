@@ -57,7 +57,7 @@ private:
     int       _mw;
     int       _mh;
     int       _imgscale = 4;
-    uint8_t*  _motionbufs[3] = {nullptr,nullptr,nullptr};
+    uint8_t*  _motionbufs[3] = {nullptr, nullptr,nullptr};
     int       _mobuf_idx;
     int       _motionsz;
     mutexx    _m;

@@ -49,14 +49,14 @@
 
             move{
                 motion           {100,1000}         # changed pixels range for spin, 0,0 to disable
-                pix_noise      {20}               # frame pixels change to detect motion
+                motion_diff      {20}               # frame pixels change to detect motion
                 noise_div        {8}                # lower -> higher noise, (2...32)
                 in_rect          {0,0,0,0}          # motion in detection in within img_size
                 out_rect         {0,0,0,0}          # motion reject in within img_size
-                img_scale     {4}                # scale for motion rect from img_size (2,4,8,16) keep it 4
+                motion_scale     {4}                # scale for motion rect from img_size (2,4,8,16) keep it 4
                 innertia         {5,100}            # capture after spin 5 every 100 ms
                 time_lapse       {0}                # time lapse cpature. even no motion. 0 disabled
-                dark_comp        {20}            # timelapse disable and motion disable if average dark pix are under 20,10
+                dark_comp        {20,10}            # timelapse disable and motion disable if average dark pix are under 20,10
                ~run_app          {/home/marius/run/buzz.sh}
                 on_max_files     {8912,make_mov.sh}  # rolls over
                 max_movie        {200}               # when using lib_av 200 Mb/mpg file
@@ -73,14 +73,14 @@
             fps           {1}                                               # this is a slow digoo cam
             move{
                 motion           {30,600}           # changed pixels range for spin, 0,0 to disable
-                pix_noise      {20}               # frame pixels change to detect motion
+                motion_diff      {20}               # frame pixels change to detect motion
                 noise_div        {8}                # lower -> higher noise, (2...32)
                 in_rect          {0,0,0,0}          # motion in detection in within img_size
                 out_rect         {0,0,0,0}          # motion reject in within img_size
-                img_scale        {16}                # scale for motion rect from img_size (2,4,8,16) keep it 4
+                motion_scale     {4}                # scale for motion rect from img_size (2,4,8,16) keep it 4
                 innertia         {5,100}            # capture after spin 5 every 100 ms
                 time_lapse       {0}                # time lapse cpature. even no motion. 0 disabled
-                dark_comp        {20}            # timelapse disable and motion disable if average dark pix are under 20,10
+                dark_comp        {20,10}            # timelapse disable and motion disable if average dark pix are under 20,10
                ~run_app          {/home/marius/run/buzz.sh}
                 on_max_files     {8912,make_mov.sh}  # rolls over
                 max_movie        {200}               # when using lib_av 200 Mb/mpg file

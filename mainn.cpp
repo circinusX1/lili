@@ -106,7 +106,7 @@ void kapture()
     event_t                 loopevent;
     std::vector<acamera*>   cameras;
     sockserver*             pserver     = nullptr;
-    jencoder                encode(jquality,  bw_image);
+    jencoder                 encode(jquality,  bw_image);
     int8_t                  ncams = 0;
 
     TRACE() << __FUNCTION__ << "\n";
@@ -121,7 +121,7 @@ void kapture()
         }
         else{
             TRACE()<<"server started on " << local_server_port << "\n";
-        }
+    }
     }
     encode.init(img_size);
 
@@ -140,12 +140,14 @@ void kapture()
         if(!url.empty())
         {
             TRACE()<<"Cam:" << url << "\n";
+#ifdef WITH_RTSP
             if(url.find("rtsp")!=(size_t)-1)
             {
                 TRACE() << "Creating " << name << "\n";
                 pc = new rtspcam(img_size, name, url, pd);
             }
             else
+#endif
                 if(url.find("http")!=(size_t)-1)
                 {
                     TRACE() << "Creating " << name << "\n";
@@ -246,5 +248,6 @@ void kapture()
     for(auto& a: cameras){
         delete a;
     }
+
 }
 

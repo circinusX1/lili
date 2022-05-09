@@ -84,8 +84,8 @@ void jpeghttpcam::thread_main()
     char*           eoh;
     int             content_lengh;
     int             dummy;
-    int             hdrlen;             // = (eoh  -  rec) + 4;
-    int             over_flow;          // = hlen - hdrlen;
+    int             hdrlen;     // = (eoh  -  rec) + 4;
+    int             over_flow;  // = hlen - hdrlen;
     char            *scontent_lengh;
     char            req[512];
     char            rec[512];
@@ -114,8 +114,7 @@ void jpeghttpcam::thread_main()
         }
         s.create(iport);
 
-        if(s.isopen()  && s.try_connect(ihost, iport))
-        {
+        if(s.isopen()  && s.try_connect(ihost, iport)){
             int l = ::sprintf(req, GET_HDRGET, ipath, ihost);
             dummy = s.sendall(req, l);
             if(dummy != l){
@@ -181,3 +180,15 @@ void jpeghttpcam::thread_main()
         s.destroy();
     }//thread loop
 }
+
+
+
+
+
+
+
+
+
+
+
+

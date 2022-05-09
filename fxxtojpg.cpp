@@ -67,18 +67,16 @@ bool jpeger::init(const dims_t&)
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
 int jpeger::cam_to_jpg(imglayout_t& img, const std::string&)
 {
     const uint8_t* pstart = img._camp;
-    _imgsize  =  _put_jpeg_yuv420p_memory(pstart, img._dims.x, img._dims.y, _jpgq, 0);
+    _imgsize =  _put_jpeg_yuv420p_memory(pstart, img._dims.x, img._dims.y, _jpgq, 0);
     img._jpgp = _image;
     img._jpgl = _imgsize;
     img._jpgf = eFJPG;
     return  _imgsize;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
 int jpeger::cam_to_bw_for_motion(imglayout_t& img)
 {
     if(_memsz)
@@ -216,11 +214,15 @@ void jpeger:: _jpeg_mem_dest(j_compress_ptr cinfo)
     dest->pub.init_destination    = _init_destination;
     dest->pub.empty_output_buffer = _empty_output_buffer;
     dest->pub.term_destination    = _term_destination;
+
     dest->buf      = _image = (uint8_t*)malloc(BLOCK_SZ);
     assert(dest->buf);
     dest->bufsize  = _memsz = BLOCK_SZ;
     dest->jpegsize = 0;
+
     _init_destination(&_cinfo);
+    TRACE() << "      JPEGER MEM DEST \r\n";
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

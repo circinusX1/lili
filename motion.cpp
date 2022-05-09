@@ -19,7 +19,7 @@ mmotion::mmotion(const dims_t& wh, const Cbdler::Node& n):_w(wh.x),_h(wh.x)
 	_pixnoise = n["pix_noise"].to_int() * 2.55;
 	if(_imgscale<1)				_imgscale=1;
 	else if(_imgscale>16)		_imgscale=16;
-	if(_noisediv<4)				_noisediv=4;
+	if(_noisediv<4)_noisediv=4;
 	_calc_rects(wh.x,wh.y);
 }
 
@@ -40,8 +40,8 @@ void mmotion::_motion(uint8_t pix,
     _dark += uint32_t(Y);		   //  noise and dark
     Y /= _noisediv;
     Y *= _noisediv;
-    *(prowcur + (y * _mw) + x) = Y;              // build new video buffer
-    uint8_t YP = *(prowprev + (y  * _mw) + (x));   // old buffer pixel
+    *(prowcur + (y * _mw) + x) = Y;       // build new video buffer
+    uint8_t YP = *(prowprev+(y  * _mw) + (x));   // old buffer pixel
     int diff = abs(Y - YP);
     if(diff < _pixnoise)
     {
@@ -49,7 +49,7 @@ void mmotion::_motion(uint8_t pix,
     }
     else if(diff>_pixnoise)
     {
-        diff = 255;     //move
+        diff=255; //move
         ++_moves;
     }
     *(pSeen + (y * _mw)+x) = (uint8_t)diff;
@@ -72,7 +72,7 @@ int mmotion::_det_mov_422(const imglayout_t& imgl)
     if(_pixnoise<1){  _pixnoise=4; }
     _dark  = 0;
     _moves = 0;
-    for (int y = 1; y <_mh-dy; y++)             //height
+    for (int y=1; y <_mh-dy; y++)             //height
     {
         for (int x = 1; x < _mw-dx; x++)       //width
         {
@@ -183,6 +183,7 @@ int mmotion::det_mov(const imglayout_t& imgl)
             uint8_t* prowcur = _motionbufs[!_mobuf_idx];
             int pixels = 0;
 
+
             int dx = img.width() / _mw; if(dx==0)dx=1;
             int dy = img.height() / _mh; if(dy==0)dy=1;
             int neww = _mw * components;
@@ -290,8 +291,8 @@ void mmotion::_calc_rects(int w, int h, bool force)
 		memset(_motionbufs[1],0,msz);
 		memset(_motionbufs[2],0,msz);
 		_mobuf_idx = 0;
-		_motionsz  = msz;
-		_moves = 0;
+		_motionsz = msz;
+		_moves=0;
 		_mmeter = 0;
 	}
 }

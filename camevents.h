@@ -17,7 +17,7 @@ class camevents
 public:
     camevents(const dims_t& wh, const Cbdler::Node& n);
 
-    const event_t&  proc_events(const imglayout_t& cam, std::string& name, uint8_t prep_pred);
+    const event_t&  proc_events(const imglayout_t& cam, const std::string& name, uint8_t prep_pred);
     const uint8_t* getm(int& w, int& h, int& sz);
     void clean_events();
     void set(const dims_t& mohilo, int pixnoise, int pixdiv, int imgscale);
@@ -25,18 +25,20 @@ public:
 
 private:
     int _darkaverage()const{return _mt ?  _mt->darkav() : 0;}
+    int _proc_events(const imglayout_t& imgl);
 
 private:
     mmotion*    _mt             = nullptr;
-    time_t      _movetime       = 0;
-    time_t      _lapsetime      = 0;
+    time_t      _lasttime       = 0;
     int         _robinserve     ;
     time_t      _mpgnewfile     ;
     time_t      _lapsetick      ;
+    time_t      _tickmove       ;
     event_t     _event          ;
     dims_t      _mohilo         ;
     int         _innertia       ;
     int         _inertiiaitl    ;
+    int         _time_lapse     ;
     int         _dark_lapse     ;
     int         _dark_motion    ;
     int         _one_shot       ;

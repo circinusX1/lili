@@ -7,8 +7,8 @@
 #include "sock.h"
 #include "os.h"
 
-#define MIN_HDR  20
-#define  LAST_CONTIME 5
+#define  MIN_HDR        20
+#define  LAST_CONTIME   5
 typedef void (*pfn_cb)();
 
 class RawSock;

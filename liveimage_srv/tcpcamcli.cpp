@@ -26,7 +26,7 @@ TcpCamCli::TcpCamCli(RawSock& o,
                      const LiFrmHdr& h,const char* clionhdr):RawSock(o,h,RawSock::CAM),
     _on_conhdr(clionhdr)
 {
-    _cap  = MAX_BUFF;
+    _cap = MAX_BUFF;
     _seps = 0;
     _name = _header.camname;
 
@@ -193,7 +193,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
 
     if(!_recordname.empty() && _header.event.predicate & CMD_RECORD)
     {
-        char      fn[256];
+        char    fn[256];
         constexpr unsigned char red[] = { 255, 0, 0 };
         constexpr unsigned char black[] = { 0, 0, 0 };
 
@@ -201,7 +201,8 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
         img.load_jpeg_buffer(vf, imgsz);
         ::snprintf(fn, sizeof(fn),"%s:%s,%d",str_time(), _name.c_str(), _header.event.movepix);
         img.draw_text(0,0, fn, red,black,1,26);
-        snprintf(fn,sizeof(fn),"%s/img_%05zu.jpg",_fpath.c_str(),_seq++);
+        snprintf(fn,sizeof(fn),"%s/img_%05zu.jpg",_fpath.c_str(), _seq++);
+        GLOGI( "Saving " << fn );
         img.save(fn);
         if((int)_seq > (int)_maxseq)
         {
@@ -213,6 +214,7 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
                 shell += this->name() + " &";
                 GLOGD("executing" << shell);
                 ::system(shell.c_str());
+                //_tm->run( namex,_onmaxseq,where,namex);
             }
             _save_seq();
         }
