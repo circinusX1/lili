@@ -84,6 +84,7 @@ int main(int nargs, char* vargs[])
     pCFG = new Cbdler();
     try{
         pCFG->parse("./liveimage.konf");
+	TRACE()<< "starting \n";
         kapture();
     }catch(int line)
     {
@@ -107,6 +108,7 @@ void kapture()
     sockserver*             pserver     = nullptr;
     jencoder                encode(jquality,  bw_image);
 
+    TRACE() << __FUNCTION__ << "\n";
     int local_server_port = CFG["server"]["port"].to_int();
     if(local_server_port){
         pserver = new sockserver(local_server_port, img_size, img_format);
@@ -116,10 +118,15 @@ void kapture()
             delete pserver;
             pserver = nullptr;
         }
+        else{
+            TRACE()<<"server started on " << local_server_port << "\n";
+        }
     }
 
     encode.init(img_size);
+
     size_t cams = CFG["cameras"].count();
+    TRACE() << "There are " << cams << " cameras";
     for(size_t c = 0 ; c < cams; c++)
     {
         event_t flag ={0,0};
@@ -150,7 +157,7 @@ void kapture()
         acamera* pc = nullptr;
         if(!url.empty())
         {
-            TRACE()<<url<<"\n";
+            TRACE()<<"Cam:" << url << "\n";
             if(url.find("rtsp")!=(size_t)-1)
                 pc = new rtspcam(img_size, name, url, pd);
             else

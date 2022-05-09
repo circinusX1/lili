@@ -1,4 +1,5 @@
 ///   EXPERIMENTAL
+#ifdef WITH_RTSP
 
 #include <unistd.h>
 #include "anytojpg.h"
@@ -166,3 +167,5 @@ int mpeger::cam_to_bw(const imglayout_t&)
 {
     return 0;
 }
+
+#endif

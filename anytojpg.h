@@ -1,5 +1,8 @@
+
 #ifndef MPEGER_H
 #define MPEGER_H
+
+#ifdef WITH_RTSP
 
 #include <string>
 #include "lilitypes.h"
@@ -101,4 +104,7 @@ private:
 
 };
 
+#endif /// RTSP
+
 #endif // MPEGER_H
+

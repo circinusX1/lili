@@ -208,15 +208,11 @@ void jpeger:: _jpeg_mem_dest(j_compress_ptr cinfo)
     dest->pub.init_destination    = _init_destination;
     dest->pub.empty_output_buffer = _empty_output_buffer;
     dest->pub.term_destination    = _term_destination;
-
     dest->buf      = _image = (uint8_t*)malloc(BLOCK_SZ);
     assert(dest->buf);
     dest->bufsize  = _memsz = BLOCK_SZ;
     dest->jpegsize = 0;
-
     _init_destination(&_cinfo);
-    TRACE() << "      JPEGER MEM DEST \r\n";
-
 }
 
 static void  _init_destination(j_compress_ptr cinfo)
