@@ -126,12 +126,12 @@ public:
     rtspproto();
     ~rtspproto();
     bool cmd_play(std::string url, const std::string& user);
-    bool spin(Frame* frame, int& index);
+    bool spin(Frame& frame);
     void stop();
 
 protected:
     bool _mess_response(const char *buf, size_t bufsize);
-    void _do_udp(const char *buf, size_t bufsize, Frame* frame, int& index);
+    void _do_udp(const char *buf, size_t bufsize, Frame& frame);
     bool _spawn_udp();
     bool _authenticate();
     void _seed();
@@ -141,9 +141,9 @@ protected:
     void _send_request();
     void _rtp_stats_print();
     void _rtp_stats_update(struct rtp_header *rtp_h);
-    int  _streamer_write_nal(Frame* frame, int index);
+    int  _streamer_write_nal(Frame& frame);
     int _streamer_write(const void *buf, size_t count, Frame& frame, bool done=false);
-    int _rtp_parse(unsigned char *raw, int size, Frame* frame, int& index);
+    int _rtp_parse(unsigned char *raw, int size, Frame& frame);
 
 private:
     int                                 _sequence = 0;
@@ -170,7 +170,7 @@ private:
     fd_set                               _errorfd;
     int                                  _maxfd = 0;
     rtp_stats                            _rtp_st;
-
+    uint8_t*                             _payload; //[8912];
 };
 
 #endif /* RtspPlayer_hpp */

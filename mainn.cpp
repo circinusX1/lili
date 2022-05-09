@@ -107,6 +107,7 @@ void kapture()
     std::vector<acamera*>   cameras;
     sockserver*             pserver     = nullptr;
     jencoder                encode(jquality,  bw_image);
+    int8_t                  ncams = 0;
 
     TRACE() << __FUNCTION__ << "\n";
     int local_server_port = CFG["server"]["port"].to_int();
@@ -122,14 +123,12 @@ void kapture()
             TRACE()<<"server started on " << local_server_port << "\n";
         }
     }
-
     encode.init(img_size);
 
     size_t cams = CFG["cameras"].count();
     TRACE() << "There are " << cams << " cameras";
     for(size_t c = 0 ; c < cams; c++)
     {
-        event_t flag ={0,0};
         const Cbdler::Node& pd      = CFG["cameras"].scope(c);
         const std::string& name     = pd["name"].value();
         const std::string& url      = pd["url"].value();
@@ -137,44 +136,34 @@ void kapture()
 
         if(name.empty() || name.at(0)=='~')
             continue;
-
-        const Cbdler::Node& nev = pd["on_event"];
-        for(size_t ev=0;ev<nev.count();ev++){
-            if(nev.value(ev)=="record"){
-                flag.predicate |= FLAG_RECORD;  // @SERVER
-            }
-            else if(nev.value(ev)=="webcast"){
-                flag.predicate |= FLAG_WEBCAST;
-            }
-            else if(nev.value(ev)=="save"){
-                flag.predicate |= FLAG_SAVE;
-            }
-            else if(nev.value(ev)=="force"){
-                flag.predicate |= FLAG_FORCE_SAVE;
-            }
-        }
-
         acamera* pc = nullptr;
         if(!url.empty())
         {
             TRACE()<<"Cam:" << url << "\n";
             if(url.find("rtsp")!=(size_t)-1)
+            {
+                TRACE() << "Creating " << name << "\n";
                 pc = new rtspcam(img_size, name, url, pd);
+            }
             else
                 if(url.find("http")!=(size_t)-1)
+                {
+                    TRACE() << "Creating " << name << "\n";
                     pc = new jpeghttpcam(img_size, name, url, pd);
-                else{
+                }
+                else
+                {
                     TRACE() << "NO CAM CONFIGURED\n";
                 }
 
         }
         else if(!dev.empty())
         {
+            TRACE() << "Creating " << name << "\n";
             pc = new localcam(img_size, name, dev, pd);
         }
-        if(pc==nullptr){
-            __alive = 0;
-        }else{
+        if(pc)
+        {
             std::string swebcast = CFG["webcast"]["server"].value();
             if(!swebcast.empty())
             {
@@ -186,10 +175,11 @@ void kapture()
             cameras.push_back(pc);
             if(pserver)
                 pserver->reg_cam(pc->name());
+            ncams++;
         }
     }
 
-    while(__alive && 0 == ::usleep(10000))
+    while(ncams && __alive && 0 == ::usleep(10000))
     {
         image._now = ::gtc();
         if(pserver){
@@ -236,7 +226,7 @@ void kapture()
                             imly._camf=e422;
                             imly._dims.x=w;
                             imly._dims.y=h;
-                            int jpgsz = encode.cam_to_bw(imly);
+                            int jpgsz = encode.cam_to_bw_for_motion(imly);
                             if(jpgsz){
                                 pserver->stream_on(imly._jpgp, imly._jpgl, imly._jpgf, wants);
                             }
@@ -256,6 +246,5 @@ void kapture()
     for(auto& a: cameras){
         delete a;
     }
-
 }
 

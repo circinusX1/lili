@@ -8,6 +8,7 @@ extern bool __alive;
 
 #define OUT_STREAM  std::cerr
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 rtspcam::rtspcam(const dims_t& wh,const std::string& name,
                  const std::string& loc,
                  const Cbdler::Node& n):acamera(wh,name,loc,n)
@@ -26,6 +27,7 @@ rtspcam::rtspcam(const dims_t& wh,const std::string& name,
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 rtspcam::~rtspcam()
 {
     delete _pipa;
@@ -34,7 +36,7 @@ rtspcam::~rtspcam()
     this->stop_thread();
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void  rtspcam::thread_main()
 {
     rtspproto   p;
@@ -44,7 +46,8 @@ void  rtspcam::thread_main()
     {
         do{
             AutoLock al(&_mut);
-            rv = p.spin(_frames,_flip);
+
+            rv = p.spin(_frames->write());
         }while(0);
         if (rv==false)
         {
@@ -65,21 +68,20 @@ size_t rtspcam::get_frame(imglayout_t& i)
 
     if(a.locked())
     {
-        Frame& frame = _frames[_flip];
+        Frame& frame = _frames->read();
 
         i._caml      = 0;
-        i._camf      = eNOTJPG;
-        i._dims      = _frames[_flip]._wh;
         if(frame.is_ready())
         {
+            _frames->flip();
+            i._camf      = eNOTJPG;
+            i._dims      = frame._wh;
             i._caml = frame.ptr(&i._camp);
             if(_pipa)
             {
-                TRACE() << "piping "  << _frames[_flip].length() << " bytes\n";
-                _pipa->stream(_frames[_flip].buffer(),_frames[_flip].length());
+                TRACE() << "piping "  <<frame.length() << " bytes\n";
+                _pipa->stream(frame.buffer(),frame.length());
             }
-            _frames[_flip].reset();
-            _flip=!_flip;
         }
     }
     return leng;
@@ -94,6 +96,7 @@ bool rtspcam::spin()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 bool rtspcam::init(const dims_t&)
 {
+    init_frames();
     return start_thread()==0;
 }
 

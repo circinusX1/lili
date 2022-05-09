@@ -21,10 +21,11 @@
 #include "fxxtojpg.h"
 #include "cbconf.h"
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 #define BLOCK_SZ	16384
 extern bool __alive;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 typedef struct
 {
     struct jpeg_destination_mgr pub;
@@ -33,14 +34,17 @@ typedef struct
     size_t jpegsize=0;
 } mem_destination_mgr;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 typedef mem_destination_mgr *mem_dest_ptr;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 static void     _init_destination(j_compress_ptr cinfo);
 static boolean  _empty_output_buffer(j_compress_ptr cinfo);
 static void     _term_destination(j_compress_ptr cinfo);
 static int      _jpeg_mem_size(j_compress_ptr cinfo);
 static jpeger*  _pthis;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 jpeger::jpeger(int q, bool bw):_image(0),_jpgq(q),_imgsize(0),_memsz(0)
 {
     _pthis=this;
@@ -51,6 +55,7 @@ jpeger::jpeger(int q, bool bw):_image(0),_jpgq(q),_imgsize(0),_memsz(0)
     _bandw = bw;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 jpeger::~jpeger()
 {
     jpeg_destroy_compress(&_cinfo);
@@ -62,17 +67,19 @@ bool jpeger::init(const dims_t&)
     return true;
 }
 
-int jpeger::cam_to_jpg(imglayout_t& img, const std::string& name)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+int jpeger::cam_to_jpg(imglayout_t& img, const std::string&)
 {
     const uint8_t* pstart = img._camp;
-    _imgsize =  _put_jpeg_yuv420p_memory(pstart, img._dims.x, img._dims.y, _jpgq, 0);
+    _imgsize  =  _put_jpeg_yuv420p_memory(pstart, img._dims.x, img._dims.y, _jpgq, 0);
     img._jpgp = _image;
     img._jpgl = _imgsize;
     img._jpgf = eFJPG;
     return  _imgsize;
 }
 
-int jpeger::cam_to_bw(imglayout_t& img)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+int jpeger::cam_to_bw_for_motion(imglayout_t& img)
 {
     if(_memsz)
     {
@@ -108,7 +115,7 @@ int jpeger::cam_to_bw(imglayout_t& img)
     return 0;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 int jpeger::_put_jpeg_yuv420p_memory(const uint8_t *pyuv420,
                                      int width,
                                      int height,
@@ -193,6 +200,7 @@ int jpeger::_put_jpeg_yuv420p_memory(const uint8_t *pyuv420,
     return jpeg_imgsz;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void jpeger:: _jpeg_mem_dest(j_compress_ptr cinfo)
 {
     mem_dest_ptr dest;
@@ -215,6 +223,7 @@ void jpeger:: _jpeg_mem_dest(j_compress_ptr cinfo)
     _init_destination(&_cinfo);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 static void  _init_destination(j_compress_ptr cinfo)
 {
     mem_dest_ptr dest = (mem_dest_ptr) cinfo->dest;
@@ -225,6 +234,7 @@ static void  _init_destination(j_compress_ptr cinfo)
     // TRACE() << "      JPEGER INIT TO "<<dest->buf <<","<<dest->bufsize << "bytes \r\n";
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 static boolean  _empty_output_buffer(j_compress_ptr cinfo)
 {
     mem_dest_ptr dest = (mem_dest_ptr) cinfo->dest;
@@ -249,6 +259,7 @@ static boolean  _empty_output_buffer(j_compress_ptr cinfo)
     return TRUE;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 static void _term_destination(j_compress_ptr cinfo)
 {
     mem_dest_ptr dest = (mem_dest_ptr) cinfo->dest;
@@ -258,6 +269,7 @@ static void _term_destination(j_compress_ptr cinfo)
     // TRACE() << "      JPEGER TERM \r\n";
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 static int _jpeg_mem_size(j_compress_ptr cinfo)
 {
     mem_dest_ptr dest = (mem_dest_ptr) cinfo->dest;

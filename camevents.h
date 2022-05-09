@@ -17,7 +17,7 @@ class camevents
 public:
     camevents(const dims_t& wh, const Cbdler::Node& n);
 
-    const event_t&  proc_events(const imglayout_t& cam, std::string& name);
+    const event_t&  proc_events(const imglayout_t& cam, std::string& name, uint8_t prep_pred);
     const uint8_t* getm(int& w, int& h, int& sz);
     void clean_events();
 

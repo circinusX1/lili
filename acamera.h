@@ -6,8 +6,35 @@
 #include "lilitypes.h"
 #include "camevents.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+class DuoFrame{
+public:
+    DuoFrame(){
+        _duo[0].reset();
+        _duo[1].reset();
+    }
 
+    Frame&  write(){
+        return _duo[_locked];
+    }
 
+    Frame&  read(){
+        if(_duo[_locked].is_ready())
+            return _duo[_locked];
+        return _duo[!_locked];
+    }
+
+    void flip(){
+        _locked = !_locked;
+        _duo[_locked].reset();
+    }
+
+private:
+    Frame   _duo[2];
+    int     _locked = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 class imgsink;
 class acamera
 {
@@ -25,6 +52,7 @@ public:
     const uint8_t* getm(int& w, int& h, int& sz);
     const event_t&  proc_events(const imglayout_t& img);
     void  clean_events();
+    void  init_frames();
 
 protected:
     camevents       _mt;
@@ -33,7 +61,8 @@ protected:
     std::string     _location;
     int             _fps;
     imgsink*        _peer = nullptr;
-
+    uint8_t         _predicate = 0;
+    DuoFrame*       _frames = nullptr;
 };
 
 #endif // ACAMERA_H

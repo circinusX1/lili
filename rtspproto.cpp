@@ -56,11 +56,11 @@ constexpr const char* __sdps[] = {
 
 
 rtspproto::rtspproto() {
-
+    _payload =  new  uint8_t[8912];
 }
 
 rtspproto::~rtspproto() {
-
+    delete []_payload;
 }
 
 
@@ -309,9 +309,10 @@ bool rtspproto::_authenticate()
 
 
 
-void rtspproto::_do_udp(const char *buf, size_t bufsize, Frame* frame, int& index) {
-    _rtp_parse((unsigned char*)buf,bufsize, frame, index);
-    frame[index]._wh = _dims;
+void rtspproto::_do_udp(const char *buf, size_t bufsize, Frame& frame)
+{
+    _rtp_parse((unsigned char*)buf,bufsize, frame);
+    frame._wh = _dims;
     return ;
 }
 
@@ -344,7 +345,7 @@ bool rtspproto::cmd_play(std::string url, const std::string& credentials)
     return false;
 }
 
-bool rtspproto::spin(Frame* frame, int& index)
+bool rtspproto::spin(Frame& frame)
 {
     int  r;
     char recvbuf[2048];
@@ -380,7 +381,7 @@ bool rtspproto::spin(Frame* frame, int& index)
                 accum=0;
             }
         }
-        _do_udp(recvbuf, recvbytes, frame, index);
+        _do_udp(recvbuf, recvbytes, frame);
     }
 
     if (r & USIO_RD)
@@ -562,10 +563,10 @@ void rtspproto::_rtp_stats_update(struct rtp_header *rtp_h)
 }
 
 
-int rtspproto::_streamer_write_nal(Frame* frame, int index)
+int rtspproto::_streamer_write_nal(Frame& frame)
 {
     uint8_t nal_header[4] = {0x00, 0x00, 0x00, 0x01};
-    frame[index].append(nal_header,sizeof(nal_header));
+    frame.append(nal_header,sizeof(nal_header));
     return 1;
 }
 
@@ -579,12 +580,12 @@ int rtspproto::_streamer_write(const void *buf, size_t count, Frame& frame, bool
     return 1;
 }
 
-int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index)
+int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame& frame)
 {
     int raw_offset = 0;
     int rtp_length = size;
     int paysize;
-    unsigned char payload[8912];
+
     struct rtp_header rtp_h;
 
     rtp_h.version = raw[raw_offset] >> 6;
@@ -625,8 +626,8 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
     /* Payload size */
     paysize = (rtp_length - raw_offset);
 
-    memset(payload, '\0', sizeof(payload));
-    memcpy(&payload, raw + raw_offset, paysize);
+    memset(_payload, '\0', 8912);
+    memcpy(_payload, raw + raw_offset, paysize);
 
     /*
      * A new RTP packet has arrived, we need to pass the rtp_h struct
@@ -655,9 +656,9 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
      *   |F|NRI|  Type   |
      *   +---------------+
      */
-    int nal_forbidden_zero = CHECK_BIT(payload[0], 7);
-    int nal_nri  = (payload[0] & 0x60) >> 5;
-    int nal_type = (payload[0] & 0x1F);
+    int nal_forbidden_zero = CHECK_BIT(_payload[0], 7);
+    int nal_nri  = (_payload[0] & 0x60) >> 5;
+    int nal_type = (_payload[0] & 0x1F);
 #if 0
     printf("      >> NAL\n");
     printf("         Forbidden zero: %i\n", nal_forbidden_zero);
@@ -671,10 +672,10 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
 
         /* Write NAL header */
 
-        _streamer_write_nal(frame, index);
+        _streamer_write_nal(frame);
 
         /* Write NAL unit */
-        _streamer_write(payload, sizeof(paysize), frame[index]);
+        _streamer_write(_payload, sizeof(paysize), frame);
     }
 
     /*
@@ -704,13 +705,13 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
         uint8_t *q;
         uint16_t nalu_size;
 
-        q = payload + 1;
+        q = _payload + 1;
         int nidx = 0;
 
         nidx = 0;
         while (nidx < paysize - 1) {
             /* write NAL header */
-            _streamer_write_nal(frame, index);
+            _streamer_write_nal(frame);
 
             /* get NALU size */
             nalu_size = (q[nidx] << 8) | (q[nidx + 1]);
@@ -719,7 +720,7 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
             nidx += 2;
 
             /* write NALU size */
-            _streamer_write(&nalu_size, 1, frame[index]);
+            _streamer_write(&nalu_size, 1, frame);
 
             if (nalu_size == 0) {
                 nidx++;
@@ -727,15 +728,16 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
             }
 
             /* write NALU data */
-            _streamer_write(q + nidx, nalu_size, frame[index]);
+            _streamer_write(q + nidx, nalu_size, frame);
             nidx += nalu_size;
         }
     }
-    else if (nal_type == NAL_TYPE_FU_A) {
+    else if (nal_type == NAL_TYPE_FU_A)
+    {
         //printf("         >> Fragmentation Unit\n");
 
         uint8_t *q;
-        q = payload;
+        q = _payload;
 
         uint8_t h264_start_bit = q[1] & 0x80;
         uint8_t h264_end_bit   = q[1] & 0x40;
@@ -745,22 +747,25 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
 
         if (h264_start_bit) {
             /* write NAL header */
-            _streamer_write_nal(frame, index);
+            _streamer_write_nal(frame);
 
             /* write NAL unit code */
-            _streamer_write(&h264_key, sizeof(h264_key),frame[index]);
+            _streamer_write(&h264_key, sizeof(h264_key),frame);
         }
-        _streamer_write(q + 2, paysize - 2,frame[index]);
+        _streamer_write(q + 2, paysize - 2,frame);
 
-        if (h264_end_bit) {
+        if (h264_end_bit)
+        {
             TRACE()<< "End BIT \n";
-            frame[index].ready();
+            frame.ready();
             //frame[!index].reset();
         }
     }
-    else if (nal_type == NAL_TYPE_UNDEFINED) {
+    else if (nal_type == NAL_TYPE_UNDEFINED)
+    {
     }
-    else {
+    else
+    {
         printf("OTHER NAL!: %i\n", nal_type);
         raw_offset++;
 
@@ -770,7 +775,6 @@ int rtspproto::_rtp_parse(unsigned char *raw, int size, Frame* frame, int& index
     if (rtp_h.seq > _rtp_st.highest_seq) {
         _rtp_st.highest_seq = rtp_h.seq;
     }
-
     _rtp_stats_print();
     return raw_offset;
 }

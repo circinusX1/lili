@@ -4,10 +4,11 @@
 #include "sock.h"
 #include "webcast.h"
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 extern bool __alive;
 #define SIG_LEN 16
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 #define GET_HDRGET "GET %s HTTP/1.1\r\n"            \
     "Host: %s\r\n"                                  \
     "User-Agent: liveimage 1.0\r\n"                 \
@@ -16,6 +17,7 @@ extern bool __alive;
     "Pragma: no-cache\r\n"                          \
     "Cache-Control: no-cache\r\n\r\n"
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 jpeghttpcam::jpeghttpcam(const dims_t& wh,
                          const std::string& name,
                          const std::string& loc,
@@ -29,6 +31,7 @@ jpeghttpcam::jpeghttpcam(const dims_t& wh,
     else if(_msleep<500)_msleep=500;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 jpeghttpcam::~jpeghttpcam()
 {
     this->signal_to_stop();
@@ -36,24 +39,25 @@ jpeghttpcam::~jpeghttpcam()
     this->stop_thread();
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 bool jpeghttpcam::init(const dims_t&)
 {
-    _frame[0].set_len(0);
-    _frame[1].set_len(0);
+    init_frames();
     return start_thread();
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 size_t jpeghttpcam::get_frame(imglayout_t& i)
 {
     AutoTryLock     al(&_mut);
     size_t          len = 0;
-    int             ifrm = !_ifrm;
-
     if(al.locked())
     {
-        if(_frame[ifrm].length())
+        const Frame& frame = _frames->read();
+        if(frame.is_ready())
         {
-            i._caml   = _frame[ifrm].ptr(&i._camp);
+            _frames->flip();
+            i._caml   = frame.ptr(&i._camp);
             i._camf   = ::is_jpeg(i._camp, i._caml) ? _format : eNONE;
             i._dims.x = _imgsz.x;
             i._dims.y = _imgsz.y;
@@ -62,18 +66,17 @@ size_t jpeghttpcam::get_frame(imglayout_t& i)
         {
             i._caml = 0;
         }
-        _frame[ifrm].set_len(0);
-        _ifrm = !_ifrm;
     }
     return len;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 bool jpeghttpcam::spin()
 {
     return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void jpeghttpcam::thread_main()
 {
     tcp_cli_sock    s;
@@ -81,8 +84,8 @@ void jpeghttpcam::thread_main()
     char*           eoh;
     int             content_lengh;
     int             dummy;
-    int             hdrlen;     // = (eoh  -  rec) + 4;
-    int             over_flow;  // = hlen - hdrlen;
+    int             hdrlen;             // = (eoh  -  rec) + 4;
+    int             over_flow;          // = hlen - hdrlen;
     char            *scontent_lengh;
     char            req[512];
     char            rec[512];
@@ -100,16 +103,19 @@ void jpeghttpcam::thread_main()
     while(!this->is_stopped() && __alive)
     {
         ::usleep(_msleep << 10);
-        if(s.isopen()){
+        if(s.isopen()){             //  flush
 
             AutoLock    al(&_mut);
-            s.select_receive(_frame[_ifrm].buffer(), _frame[_ifrm].capa(), 4000);
-            _frame[_ifrm].set_len(0);
+            Frame&      recfrm = _frames->write();
+
+            s.select_receive(recfrm.buffer(), recfrm.capa(), 4000);
+            recfrm.set_len(0);
             s.destroy();
         }
         s.create(iport);
 
-        if(s.isopen()  && s.try_connect(ihost, iport)){
+        if(s.isopen()  && s.try_connect(ihost, iport))
+        {
             int l = ::sprintf(req, GET_HDRGET, ipath, ihost);
             dummy = s.sendall(req, l);
             if(dummy != l){
@@ -131,11 +137,13 @@ void jpeghttpcam::thread_main()
             isjpg = true;
             do{
                 AutoLock    al(&_mut);
-                _frame[_ifrm].set_len(0);
+
+                Frame&      recfrm = _frames->write();
+                recfrm.set_len(0);
                 if(over_flow>0){
                     const uint8_t *pafter = (const uint8_t*)(rec + hdrlen);
-                    _frame[_ifrm].copy(pafter, 0, over_flow);
-                    isjpg = ::is_jpeg(_frame[_ifrm].buffer(), over_flow);
+                    recfrm.copy(pafter, 0, over_flow);
+                    isjpg = ::is_jpeg(recfrm.buffer(), over_flow);
                 }
                 if(isjpg==false){
                     continue;
@@ -150,36 +158,26 @@ void jpeghttpcam::thread_main()
                 {
                     continue;
                 }
-                if(_frame[_ifrm].realloc(content_lengh + over_flow + SIG_LEN)==false)
+                if(recfrm.realloc(content_lengh + over_flow + SIG_LEN)==false)
                 {
                     TRACE() << "Cannot allocat memory\n.Exiting\n";
                     __alive =false;
                     break;
                 }
-                hlen = s.receiveall( _frame[_ifrm].buffer(over_flow), content_lengh);
+                hlen = s.receiveall( recfrm.buffer(over_flow), content_lengh);
                 if(hlen != content_lengh){
                     continue;
                 }
-                isjpg = ::is_jpeg( _frame[_ifrm].buffer(), content_lengh + over_flow);
+                isjpg = ::is_jpeg(recfrm.buffer(), content_lengh + over_flow);
                 if(isjpg){
-                    _frame[_ifrm].set_len(content_lengh + over_flow);
+                    recfrm.set_len(content_lengh + over_flow);
+                    recfrm._wh = _imgsz;
+                    recfrm.ready();
                 }else{
-                    _frame[_ifrm].set_len(0);
+                    recfrm.set_len(0);
                 }
             }while(0);
         }// connected
         s.destroy();
     }//thread loop
 }
-
-
-
-
-
-
-
-
-
-
-
-

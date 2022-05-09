@@ -3,6 +3,7 @@
 
 extern bool __alive;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 localcam::localcam(const dims_t& wh,
                    const std::string& name,
                    const std::string& loc,
@@ -17,6 +18,7 @@ localcam::localcam(const dims_t& wh,
     _fetchtime = ::gtc();
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 localcam::~localcam()
 {
     if(_dev)
@@ -24,6 +26,7 @@ localcam::~localcam()
     delete _dev;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 bool  localcam::init(const dims_t& t)
 {
     _img_size = t;
@@ -35,6 +38,7 @@ bool  localcam::init(const dims_t& t)
     return false;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 size_t localcam::get_frame(imglayout_t& i)
 {
     time_t  now = i._now;
@@ -47,15 +51,16 @@ size_t localcam::get_frame(imglayout_t& i)
         if(fatal || imgsz==0){
             return 0;
         }
-        i._camf = e422;
-        i._dims.x = _img_size.x;
-        i._dims.y = _img_size.y;
-        i._caml = imgsz;
+        i._camf    = e422;
+        i._dims.x  = _img_size.x;
+        i._dims.y  = _img_size.y;
+        i._caml    = imgsz;
         _fetchtime = now;
     }
     return (size_t)i._caml;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 bool localcam::spin()
 {
     return true;

@@ -13,11 +13,13 @@ mpeger::mpeger(int q, bool)
 
 mpeger::~mpeger()
 {
+    _pavcodec_close(c);
     _pavcodec_free_context(&c);
+    dlclose(_av_format_lib);
     dlclose(_av_codek_lib);
 }
 
-bool mpeger::init(const dims_t& imgsz)
+bool mpeger::init(const dims_t&)
 {
     char* error;
 
@@ -74,7 +76,7 @@ bool mpeger::init(const dims_t& imgsz)
     SO_SYM(_av_format_lib, avcodec_send_frame);
 
     _pavcodec_register_all();
-    codec = _pavcodec_find_encoder(AV_CODEC_ID_MJPEG);
+    codec = _pavcodec_find_encoder(AV_CODEC_ID_LJPEG);
     c = _pavcodec_alloc_context3();
 
     return true;
@@ -82,32 +84,6 @@ bool mpeger::init(const dims_t& imgsz)
 
 int mpeger::cam_to_jpg(imglayout_t& img, const std::string& name)
 {
-    std::string facum = "/tmp/movie.mov";
-/*
-    std::string facum = "./mov-";
-    facum += name;
-    facum += ".mov";
-    if(img._acum<FILE_MAX_CHECK)
-    {
-        TRACE()<< "tmp=" << facum <<"\n";
-        FILE *pff;
-        if(::access(facum.c_str(),0)==0){
-            pff = ::fopen(_facum.c_str(),"ab");
-        }else{
-            pff = ::fopen(_facum.c_str(),"wb");
-        }
-
-        if(pff)
-        {
-            ::fwrite(img._camp, 1, img._caml, pff);
-            ::fclose(pff);
-            img._acum+=img._caml;
-        }
-        return 0;
-    }
-*/
-
-    AVOutputFormat* pf = _pav_guess_format(nullptr, facum.c_str(),nullptr);
     AVFrame *picture  = _pav_frame_alloc();
     AVPacket *pkt = _pav_packet_alloc();
     AVFormatContext * pfc = NULL;
@@ -116,22 +92,27 @@ int mpeger::cam_to_jpg(imglayout_t& img, const std::string& name)
     c->width = img._dims.x;
     c->height = img._dims.y;
     c->time_base.num = 1;
-    c->time_base.den = 1;c->pix_fmt = AV_PIX_FMT_YUV420P; //img._camf;
+    c->time_base.den = 1;
+    c->pix_fmt = _last_good; //img._camf;
 
-    for(int i=AV_PIX_FMT_YUV420P;i<AV_PIX_FMT_GRAY16BE;i++)
+    if(0!=_pavcodec_open2(c, codec, NULL))
     {
-
-        if(0==_pavcodec_open2(c, codec, NULL))
-            break;
         _pavcodec_close(c);
-        c->pix_fmt = (AVPixelFormat)i;
-        c->width = img._dims.x;
-        c->height = img._dims.y;
-        c->time_base.num = 1;
-        c->time_base.den = 1;
+        for(int i=AV_PIX_FMT_YUV420P;i<AV_PIX_FMT_GRAY16BE;i++)
+        {
+            c->pix_fmt = (AVPixelFormat)i;
+            c->width = img._dims.x;
+            c->height = img._dims.y;
+            c->time_base.num = 1;
+            c->time_base.den = 1;
+            if(0==_pavcodec_open2(c, codec, NULL))
+            {
+                _last_good = (AVPixelFormat)i;
+                break;
+            }
+            _pavcodec_close(c);
+        }
     }
-
-    //AVCodecID codekid = _pav_guess_codec(pfc->oformat, NULL, facum.c_str(),NULL,AVMEDIA_TYPE_VIDEO);
 
     picture->format = c->pix_fmt;
     picture->width  = c->width;
@@ -163,7 +144,7 @@ int mpeger::cam_to_jpg(imglayout_t& img, const std::string& name)
 }
 
 
-int mpeger::cam_to_bw(const imglayout_t&)
+int mpeger::cam_to_bw_for_motion(const imglayout_t&)
 {
     return 0;
 }

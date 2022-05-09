@@ -8,7 +8,7 @@
                            const rect_t& inr,
                            const rect_t& outr):_mt(wh.x, wh.y, inr, outr)
                            */
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
 {
     //int motionlow, int motionhi, const dims_t& wh
@@ -33,6 +33,7 @@ camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 const uint8_t* camevents::getm(int& w, int& h, int& sz)
 {
     if(_mt){
@@ -44,10 +45,14 @@ const uint8_t* camevents::getm(int& w, int& h, int& sz)
     return nullptr;
 }
 
-const event_t&  camevents::proc_events(const imglayout_t& imgl, std::string& name)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+const event_t&  camevents::proc_events(const imglayout_t& imgl,
+                                        std::string& name, uint8_t prep_pred)
 {
     time_t diffc  =  (imgl._now - _movetime) + 1;
     time_t diffl  =  imgl._now - _lapsetime;
+
+    _event.predicate |= prep_pred;
 
     if(diffc > _inertiiaitl)
     {
@@ -160,7 +165,7 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl, std::string& nam
     return _event;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void camevents::clean_events()
 {
     _event.movepix = 0;

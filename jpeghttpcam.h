@@ -21,7 +21,6 @@ private:
 
 private:
     bool            _moved = true;
-    Frame           _frame[2];
     int             _ifrm = 0;
     dims_t          _imgsz = {0,0};
     EIMG_FMT        _format;

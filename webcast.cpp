@@ -87,8 +87,10 @@ void webcast::thread_main()
              frame_len = _hdr.len;
         }while(0);
 
-        if((time(0)-ctime > _pool_intl || (frame_len && event_pred & EVT_KKEP_ALIVE)))
+        if((time(0)-ctime > _pool_intl ||
+           (frame_len && event_pred & EVT_KKEP_ALIVE)))
         {
+            TRACE()<< "Try streaming \n";
             _go_streaming(host, port);
             ctime = time(0);
         }

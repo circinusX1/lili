@@ -29,8 +29,6 @@ private:
     std::string             _url,_user,_uri;
     long                    _seq  = 0;
     unsigned long           _curl_auth = CURLAUTH_NONE;
-    Frame                   _frames[2];
-    int                     _flip = 0;
     mutexx                  _mut;
     bool                    _ontcp = false;
     pipiefile*              _pipa;  //("/tmp/movie.mov");

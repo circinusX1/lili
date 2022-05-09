@@ -61,7 +61,7 @@ public:
     virtual ~mpeger();
     bool init(const dims_t& imgsz);
     int cam_to_jpg(imglayout_t& img, const std::string& name);
-    int cam_to_bw(const imglayout_t& img);
+    int cam_to_bw_for_motion(const imglayout_t& img);
 
 private:
 
@@ -99,8 +99,9 @@ private:
     long                     _accum = 0;
     std::string              _facum;
     //lavdevice - -lavformat -lavcodec -lavutil
-    const AVCodec *codec= nullptr;
-    AVCodecContext *c= nullptr;
+    const AVCodec *             codec= nullptr;
+    AVCodecContext *            c= nullptr;
+    AVPixelFormat             _last_good = AV_PIX_FMT_NONE;
 
 };
 

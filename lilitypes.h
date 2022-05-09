@@ -8,10 +8,10 @@
 #include <string.h>
 
 
-#define     INITIAL_LEN     50000
-#define     STEP_LEN        2000
+#define     INITIAL_LEN     32768
+#define     STEP_LEN        4096
 
-#define          PACK_ALIGN_1   __attribute__((packed, aligned(1)))
+#define     PACK_ALIGN_1   __attribute__((packed, aligned(1)))
 
 
 struct rect_t{
@@ -88,6 +88,7 @@ public:
     }
     bool is_ready()const{return _ready && _wh.x;}
     dims_t  _wh = {0,0};
+
 private:
     uint8_t* buf=nullptr;
     size_t  cap=0;
