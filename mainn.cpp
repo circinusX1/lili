@@ -70,6 +70,7 @@ int main(int nargs, char* vargs[])
 
     (void)nargs;
     (void)vargs;
+    TRACE()<< vargs[0] <<" \n";
 
     signal(SIGABRT, ControlC);
     signal(SIGKILL, ControlC);

@@ -45,6 +45,7 @@ int camevents::_proc_events(const imglayout_t& imgl)
             int movedpix =  _mt->det_mov(imgl);
             if(movedpix > _mohilo.x && movedpix < _mohilo.y)
             {
+		TRACE() << "moved: " << movedpix << "\n";
                 return uint8_t(movedpix);
             }
         }
@@ -76,6 +77,11 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
     {
         if(_mt){
             _event.movepix = _mt->det_mov(imgl);
+            if(_event.movepix < _mohilo.x ||
+               _event.movepix > _mohilo.y)
+            {
+		_event.movepix = 0;
+	    }
         }
 
         if( _event.movepix )
