@@ -115,6 +115,12 @@ public:
             for(const auto& a : _values)
             {
                 if(a->_name==key){
+                    if(a->_values.size()==1 && a->_values[0]->_name[0]=='@')
+                    {
+                        std::string idx = "0";
+                        const Node* pn = _get_ref(this, a->_values[0]->_name,  idx);
+                        return *pn;
+                    }
                     // cannot have parent and first child
                     assert(this->_name!=key);
                     return *a;
@@ -141,8 +147,10 @@ protected:
             std::string ev;
             for(const auto& a : v)
             {
-                if(a=='@')continue;
-                if(a=='&')continue;
+                if(a=='@')
+                    continue;
+                if(a=='&')
+                    continue;
                 if(a=='/'){
                     if(ev==".."){
                         pn=pn->_parent;
@@ -553,7 +561,8 @@ inline void* dls(void* v, const char* fn)
 }
 
 
-#define SO_SYM(lib_,foo) _p##foo = (p_##foo)::dls(lib_,static_cast<const char*>(#foo));
+#define SO_SYM(lib_,foo) _p##foo = (p_##foo)::dls(lib_,static_cast<const char*>(#foo)); \
+                         assert(_p##foo);
 
 
 

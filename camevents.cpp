@@ -9,8 +9,11 @@
                            const rect_t& outr):_mt(wh.x, wh.y, inr, outr)
                            */
 
-camevents::camevents(const dims_t& wh, const Cbdler::Node& n)
+camevents::camevents(const dims_t& wh, const Cbdler::Node& np)
 {
+
+    const Cbdler::Node& n = np["move"];
+
     //int motionlow, int motionhi, const dims_t& wh
     _robinserve     = 0x1;
     _mpgnewfile     = 0;
@@ -66,7 +69,7 @@ const uint8_t* camevents::getm(int& w, int& h, int& sz)
 }
 
 const event_t&  camevents::proc_events(const imglayout_t& imgl,
-                                        const std::string& name,
+                                        const std::string&,
                                         uint8_t prep_pred)
 {
     uint32_t now =  gtc();
@@ -153,7 +156,7 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
                 }
             }
         }
-        else if(imgl._jpgf == eFJPG)
+        else if(imgl._jpgf == eFJPG && _on_max_files>0)
         {
             ::sprintf(fname, "%si%04d-%06d.jpg", _save_loc.c_str(),_event.movepix, _firstimage);
             ++_firstimage;

@@ -39,7 +39,9 @@ public:
     int cam_to_bw_for_motion(imglayout_t& img);
 
 private:
-	int _put_jpeg_yuv420p_memory(const uint8_t *pyuv420,int width, int height, int jpg_quality, struct tm *tm);
+	int _put_jpeg_yuv420p_memory(const uint8_t *pyuv420,
+								int width, int height, int iwidth, int iheight,
+								int jpg_quality, struct tm *tm);
 	void _jpeg_mem_dest(j_compress_ptr cinfo);
 
 public:

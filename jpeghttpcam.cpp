@@ -59,8 +59,8 @@ size_t jpeghttpcam::get_frame(imglayout_t& i)
             _frames->flip();
             i._caml   = frame.ptr(&i._camp);
             i._camf   = ::is_jpeg(i._camp, i._caml) ? _format : eNONE;
-            i._dims.x = _imgsz.x;
-            i._dims.y = _imgsz.y;
+            i._dims = _imgsz;
+            i._cfgdim = _imgsz;
         }
         else
         {
@@ -96,7 +96,7 @@ void jpeghttpcam::thread_main()
     char            ipath[64];
 
     ::strcpy(url, _location.c_str());
-    parseURL(url, scheme,
+    parse_url(url, scheme,
              sizeof(scheme), ihost, sizeof(ihost),
              &iport, ipath, sizeof(ipath));
 

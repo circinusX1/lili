@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 acamera::acamera(const dims_t& wh, const std::string& name,
                  const std::string& loc,
-                 const Cbdler::Node& n):_mt(wh, n["move"])
+                 const Cbdler::Node& n):_mt(wh, n)
 {
     _name     = name;
     _location = loc;
@@ -23,6 +23,7 @@ acamera::acamera(const dims_t& wh, const std::string& name,
             _predicate |= FLAG_FORCE_SAVE;
         }
     }
+    _img_size = CFG["image"]["img_size"].to_dims();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

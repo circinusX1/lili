@@ -16,7 +16,7 @@
         bw_image         {1}                # jpeg would make a b&w
         jpg_quality      {80}               # jpeg would use 80% quality
         img_format       {0}                # 0 jpg
-        lib_av           {/usr/lib/x86_64-linux-gnu/libavcodec.so}   # if the img format is !=0 TODO
+        lib_av           {/usr/lib/x86_64-linux-gnu/libav}   # if the img format is !=0 TODO
         lib_curl         {/usr/lib/x86_64-linux-gnu/libcurl.so}      # if there are any rtsp cameras
     }
 
@@ -65,7 +65,7 @@
         }
 
         {
-            name          {digoodgmiq}
+            #name          {digoodgmiq}
             imgsz         {320,176}
             url           {"http\://192.168.1.106\:8001/snapshot"}          # get's jpg image
             format        {image/jpg}
@@ -101,11 +101,11 @@
 
        experimental
        {
-           #name            {rpirpi}                        # a R-PI rtsp camera for tsting. experimental.
+           name           {rpirpi}                        # a R-PI rtsp camera for tsting. experimental.
            format          {vide/mpeg4}
            rtsp            {TCP}
-           # rtsp://192.168.1.116:8554/unicast
-           url             {"rtsp\://192.168.1.116\:8554/unicast"} # the rtsp strea, link
+           # rtsp://192.168.1.13:8554/unicast
+           url             {"rtsp\://192.168.1.13\:8554/unicast"} # the rtsp strea, link
            on_event        {webcast,record,force,save}     #  force->save no mater of events
            fps             {10}
        }

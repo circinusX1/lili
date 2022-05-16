@@ -19,7 +19,6 @@ public:
     int  cam_to_bw_for_motion(imglayout_t& img);
 private:
 
-    mpeger*  _mpgenc;
     jpeger*  _jpgenc;
 };
 

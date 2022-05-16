@@ -76,18 +76,16 @@ bool mpeger::init(const dims_t&)
     SO_SYM(_av_format_lib, avcodec_send_frame);
 
     _pavcodec_register_all();
-    codec = _pavcodec_find_encoder(AV_CODEC_ID_LJPEG);
+    codec = _pavcodec_find_encoder(AV_CODEC_ID_MJPEG);
     c = _pavcodec_alloc_context3();
 
     return true;
 }
 
-int mpeger::cam_to_jpg(imglayout_t& img, const std::string& name)
+int mpeger::cam_to_jpg(imglayout_t& img, const std::string&)
 {
     AVFrame *picture  = _pav_frame_alloc();
     AVPacket *pkt = _pav_packet_alloc();
-    AVFormatContext * pfc = NULL;
-
 
     c->width = img._dims.x;
     c->height = img._dims.y;
@@ -130,7 +128,7 @@ int mpeger::cam_to_jpg(imglayout_t& img, const std::string& name)
             fprintf(stderr, "error during encoding\n");
             break;
         }
-        printf("encoded frame %3"PRId64" (size=%5d)\n", pkt->pts, pkt->size);
+        printf("encoded frame %3" PRId64" (size=%5d)\n", pkt->pts, pkt->size);
         if(img._jpgl==0)
         {
             img._jpgp = pkt->data;

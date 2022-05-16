@@ -23,7 +23,9 @@ public:
     virtual bool init(const dims_t&);
 
 private:
-
+#ifdef WITH_AVLIB_RTSP
+    void    _avlib_rtsp();
+#endif
 
 private:
     std::string             _url,_user,_uri;
@@ -31,7 +33,7 @@ private:
     unsigned long           _curl_auth = CURLAUTH_NONE;
     mutexx                  _mut;
     bool                    _ontcp = false;
-    pipiefile*              _pipa;  //("/tmp/movie.mov");
+    pipiefile*              _pipa = nullptr;  //("/tmp/movie.mov");
 };
 
 #endif // RTSPCAM_H

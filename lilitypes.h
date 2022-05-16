@@ -54,6 +54,7 @@ public:
                 }
                 delete[] buf;
                 cap = newcap;
+                buf = pnewbuf;
                 return true;
             }
             return  false;
@@ -69,8 +70,8 @@ public:
     {
         bool real=true;
 
-        if(nlen > cap){
-            real=realloc(nlen);
+        if(len+nlen > cap){
+            real=realloc(nlen+len);
         }
         if(real){
             ::memcpy(buf+off, p, nlen);
@@ -148,11 +149,12 @@ struct imglayout_t{
     size_t         _jpgl = 0;
     EIMG_FMT       _jpgf = eFJPG;
     dims_t         _dims = {0,0};
+    dims_t         _cfgdim = {0,0};
     time_t         _now;
 };
 
 
-inline int parseURL(const char* url, char* scheme, size_t
+inline int parse_url(const char* url, char* scheme, size_t
                     maxSchemeLen, char* host, size_t maxHostLen,
                     int* port, char* path, size_t maxPathLen) //Parse URL
 {

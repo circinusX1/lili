@@ -6,7 +6,7 @@ CONFIG += c++14 console
 CONFIG -= app_bundle
 DEFINES += cimg_use_jpeg
 DEFINES += cimg_display=0
-# DEFINES += QTPRO WITH_RTSP
+DEFINES += QTPRO WITH_AVLIB_RTSP
 INCLUDEPATH += ../rtsp_class
 INCLUDEPATH += ../
 INCLUDEPATH += ./
@@ -16,7 +16,7 @@ INCLUDEPATH += ./
 
 SOURCES += \
     ../acamera.cpp \
-    ../anytojpg.cpp \
+    ../avlibrtsp.cpp \
     ../camevents.cpp \
     ../cbconf.cpp \
     ../fxxtojpg.cpp \
@@ -29,7 +29,6 @@ SOURCES += \
     ../pipefile.cpp \
     ../rtpudpcs.cpp \
     ../rtspcam.cpp \
-    ../rtspproto.cpp \
     ../sock.cpp \
     ../sockserver.cpp \
     ../v4ldevice.cpp \
@@ -55,6 +54,7 @@ HEADERS += \
     ../CImg.h \
     ../acamera.h \
     ../anytojpg.h \
+    ../avlibrtsp.h \
     ../camevents.h \
     ../cbconf.h \
     ../encrypter.h \
@@ -72,7 +72,6 @@ HEADERS += \
     ../pipefile.h \
     ../rtpudpcs.h \
     ../rtspcam.h \
-    ../rtspproto.h \
     ../sock.h \
     ../sockserver.h \
     ../strutils.h \

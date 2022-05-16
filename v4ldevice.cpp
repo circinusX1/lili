@@ -145,7 +145,7 @@ bool v4ldevice::open()
     _xy[1] = frmt.fmt.pix.height;
     if (frmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUV420)
     {
-        TRACE() << "libv4l cannot process YUV420 format. \n";
+        TRACE() << "libv4l cannot process none YUV420 format. \n";
         return false;
     }
 
