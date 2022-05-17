@@ -4,6 +4,7 @@
 
 #ifdef WITH_AVLIB_RTSP
 
+#include <stdio.h>
 #include <string>
 #include "lilitypes.h"
 extern "C"{
@@ -46,15 +47,14 @@ typedef void (*p_av_freep)(void *ptr);
 typedef int (*p_av_frame_get_buffer)(AVFrame *frame, int align);
 typedef int (*p_avcodec_receive_packet)(AVCodecContext *avctx, AVPacket *avpkt);
 typedef void (*p_avcodec_free_context)(AVCodecContext **avctx);
-typedef enum AVCodecID (*p_av_guess_codec)(ff_const59 AVOutputFormat *fmt, const char *short_name,
+typedef enum AVCodecID (*p_av_guess_codec)(AVOutputFormat *fmt, const char *short_name,
                                            const char *filename, const char *mime_type,
                                            enum AVMediaType type);
-typedef ff_const59 AVOutputFormat* (*p_av_guess_format)(const char *short_name,
+typedef AVOutputFormat* (*p_av_guess_format)(const char *short_name,
                                                         const char *filename,
                                                         const char *mime_type);
 typedef AVFormatContext* (*p_avformat_alloc_context)(void);
-typedef int (*p_avformat_open_input)(AVFormatContext **ps, const char *url, ff_const59
-                                     AVInputFormat *fmt, AVDictionary **options);
+typedef int (*p_avformat_open_input)(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options);
 typedef void (*p_av_dict_free)(AVDictionary **m);
 typedef int (*p_avformat_find_stream_info)(AVFormatContext *ic, AVDictionary **options);
 typedef int (*p_av_read_frame)(AVFormatContext *s, AVPacket *pkt);
@@ -154,10 +154,10 @@ private:
     p_av_packet_unref             _pav_packet_unref;
     ///////////////////////////////////////////////////////////////////////////////////
     dims_t                          _dims;
-    AVCodecContext*                  avc_ctx = nullptr;
-    AVFormatContext*                 avf_ctx = nullptr;
-    int                             video_stream_index = -1;
-    AVCodec*                        avc=nullptr;
+    AVCodecContext*                 avc_ctx = nullptr;
+    AVFormatContext*                avf_ctx = nullptr;
+    int                             video_stream_index = 0;
+    AVCodec*                        avc = nullptr;
     AVDictionary*                   option = nullptr;
     AVPixelFormat                   pix_fmt = AV_PIX_FMT_NONE;
     AVFrame*                        pFrame = nullptr;

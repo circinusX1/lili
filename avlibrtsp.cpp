@@ -27,13 +27,16 @@ void avrlibrtsp::destroy()
 {
     if(pFrame422)
         _pav_free(pFrame422);
+
     if(pFrame)
         _pav_free(pFrame);
 
     if(avc_ctx)
         _pavcodec_close(avc_ctx);
+
     if(avf_ctx)
         _pavformat_close_input(&avf_ctx);
+
     avf_ctx=nullptr;
     avc_ctx=nullptr;
     pFrame = nullptr;
@@ -215,8 +218,8 @@ bool avrlibrtsp::init(const std::string& url,
     avc = _pavcodec_find_decoder(avc_ctx->codec_id);
     if (avc == nullptr)
     {
-        destroy();
         printf("avcodec_find_decoder error\n");
+        destroy();
         return false;
     }
 
