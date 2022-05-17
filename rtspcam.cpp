@@ -51,20 +51,18 @@ size_t rtspcam::get_frame(imglayout_t& i)
 
     if(a.locked())
     {
-        Frame& frame = _frames->read();
-
-        i._caml      = 0;
-        if(frame.is_ready())
+        Frame* frame = _frames->to_stream();
+        if(frame)
         {
-            _frames->flip();
+            i._caml      = 0;
             i._camf        = e422;
-            i._dims        = frame._wh;
-            i._cfgdim      = _img_size;
-            leng = i._caml = frame.ptr(&i._camp);
+            i._dims        = _img_size;
+            _frames->flip();
+            leng = i._caml = frame->ptr(&i._camp);
             if(_pipa)
             {
-                TRACE() << "piping "  <<frame.length() << " bytes\n";
-                _pipa->stream(frame.buffer(),frame.length());
+                TRACE() << "piping "  << frame->length() << " bytes\n";
+                _pipa->stream(frame->buffer(),frame->length());
             }
         }
     }
@@ -81,12 +79,16 @@ void rtspcam::_avlib_rtsp()
     {
         while(!this->is_stopped() && __alive && okay)
         {
-            if(false == p.spin(_frames->write()))
-            {
-                p.destroy();
-                ::sleep(1);
-                okay = p.init(_url, _user, _img_size);
-            }
+            do{
+                AutoLock    a(&_mut);
+                if(false == p.spin(_frames->to_load()))
+                {
+                    p.destroy();
+                    ::sleep(1);
+                    okay = p.init(_url, _user, _img_size);
+                }
+
+            }while (0);
             ::usleep(20000);
         }
     }

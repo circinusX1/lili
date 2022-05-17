@@ -14,14 +14,19 @@ public:
         _duo[1].reset();
     }
 
-    Frame&  write(){
-        return _duo[_locked];
+    Frame*  to_load(){
+        if(!_duo[_locked].is_ready()){
+            return &_duo[_locked];
+        }
+        return nullptr;
     }
 
-    Frame&  read(){
+    Frame*  to_stream(){
         if(_duo[_locked].is_ready())
-            return _duo[_locked];
-        return _duo[!_locked];
+            return &_duo[_locked];
+        else if(_duo[!_locked].is_ready())
+            return &_duo[!_locked];
+        return nullptr;
     }
 
     void flip(){

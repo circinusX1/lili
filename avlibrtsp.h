@@ -93,7 +93,7 @@ public:
     ~avrlibrtsp();
     bool init(const std::string& url,
               const std::string& credentials, const dims_t& img_size);
-    bool spin(Frame& frame);
+    bool spin(Frame* frame);
     void destroy();
 
 private:

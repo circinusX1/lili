@@ -53,7 +53,6 @@ size_t localcam::get_frame(imglayout_t& i)
     }
     i._camf = e422;
     i._dims = _img_size;
-    i._cfgdim = _img_size;
     i._caml = imgsz;
         _fetchtime = now;
     }

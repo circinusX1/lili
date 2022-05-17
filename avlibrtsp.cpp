@@ -181,7 +181,6 @@ bool avrlibrtsp::init(const std::string& url,
     _pavformat_network_init();
     avf_ctx = _pavformat_alloc_context();
 
-
     // AVDictionary* option = nullptr;
     // _pav_dict_set(&option, "rtsp_transport", "tcp", 0);
 
@@ -200,9 +199,15 @@ bool avrlibrtsp::init(const std::string& url,
 
     for (unsigned int i = 0; i < avf_ctx->nb_streams; i++)
     {
+#if DEPRECATED
         if (avf_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
         {
             video_stream_index = i;
+            break;
+        }
+#endif // 0
+        if(_pavcodec_find_encoder(avf_ctx->streams[i]->codec->codec_id)->type ==AVMEDIA_TYPE_VIDEO)
+        {
             break;
         }
     }
@@ -214,7 +219,12 @@ bool avrlibrtsp::init(const std::string& url,
         return false;
     }
     avc_ctx = avf_ctx->streams[video_stream_index]->codec;
-
+    if(nullptr == avc_ctx)
+    {
+        printf("null codek found\n");
+        destroy();
+        return false;
+    }
     avc = _pavcodec_find_decoder(avc_ctx->codec_id);
     if (avc == nullptr)
     {
@@ -233,7 +243,7 @@ bool avrlibrtsp::init(const std::string& url,
     pFrame = _pav_frame_alloc();
     pFrame422 = _pav_frame_alloc();
 
-    pFrame422->format = AV_PIX_FMT_YUV420P; /* choose same format set on sws_getContext() */
+    pFrame422->format = AV_PIX_FMT_YUV420P;
     pFrame422->width  = _dims.x; /* must match sizes as on sws_getContext() */
     pFrame422->height = _dims.y; /* must match sizes as on sws_getContext() */
 
@@ -248,22 +258,20 @@ bool avrlibrtsp::init(const std::string& url,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-bool avrlibrtsp::spin(Frame& vframe)
+bool avrlibrtsp::spin(Frame* vframe)
 {
     AVPacket packet;
     _pav_init_packet(&packet);
 
-    //av_read_frame();
     if (_pav_read_frame(avf_ctx, &packet) >= 0)
     {
         if( (packet.stream_index == video_stream_index) )
         {
-            if(vframe.is_ready()==false && packet.size)
+            if(vframe && packet.size)
             {
-                vframe._wh.x = avc_ctx->width;
-                vframe._wh.y = avc_ctx->height;
-
-                _decode(vframe, packet);
+                vframe->_wh.x = avc_ctx->width;
+                vframe->_wh.y = avc_ctx->height;
+                _decode(*vframe, packet);
             }
             else { /* discard */}
         }

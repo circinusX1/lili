@@ -53,14 +53,14 @@ size_t jpeghttpcam::get_frame(imglayout_t& i)
     size_t          len = 0;
     if(al.locked())
     {
-        const Frame& frame = _frames->read();
-        if(frame.is_ready())
+        const Frame* frame = _frames->to_stream();
+        if(frame)
         {
             _frames->flip();
-            i._caml   = frame.ptr(&i._camp);
+            i._caml   = frame->ptr(&i._camp);
             i._camf   = ::is_jpeg(i._camp, i._caml) ? _format : eNONE;
             i._dims = _imgsz;
-            i._cfgdim = _imgsz;
+            len = frame->length();
         }
         else
         {
@@ -97,23 +97,20 @@ void jpeghttpcam::thread_main()
 
     ::strcpy(url, _location.c_str());
     parse_url(url, scheme,
-             sizeof(scheme), ihost, sizeof(ihost),
-             &iport, ipath, sizeof(ipath));
+              sizeof(scheme), ihost, sizeof(ihost),
+              &iport, ipath, sizeof(ipath));
 
     while(!this->is_stopped() && __alive)
     {
         ::usleep(_msleep << 10);
         if(s.isopen()){             //  flush
-
             AutoLock    al(&_mut);
-            Frame&      recfrm = _frames->write();
+            char        buff[ONE_PAGE];
 
-            s.select_receive(recfrm.buffer(), recfrm.capa(), 4000);
-            recfrm.set_len(0);
+            while(s.select_receive(buff, ONE_PAGE, 256)){::usleep(1000);}
             s.destroy();
         }
         s.create(iport);
-
         if(s.isopen()  && s.try_connect(ihost, iport)){
             int l = ::sprintf(req, GET_HDRGET, ipath, ihost);
             dummy = s.sendall(req, l);
@@ -137,43 +134,46 @@ void jpeghttpcam::thread_main()
             do{
                 AutoLock    al(&_mut);
 
-                Frame&      recfrm = _frames->write();
-                recfrm.set_len(0);
-                if(over_flow>0){
-                    const uint8_t *pafter = (const uint8_t*)(rec + hdrlen);
-                    recfrm.copy(pafter, 0, over_flow);
-                    isjpg = ::is_jpeg(recfrm.buffer(), over_flow);
-                }
-                if(isjpg==false){
-                    continue;
-                }
-                scontent_lengh = strstr(rec,"Content-Length: ");
-                if(scontent_lengh==0){
-                    continue;
-                }
-                content_lengh = ::atoi(scontent_lengh + 16);
-                content_lengh -= over_flow;
-                if(content_lengh <= 0)
+                Frame*     recfrm = _frames->to_load();
+                if(recfrm)
                 {
-                    continue;
-                }
-                if(recfrm.realloc(content_lengh + over_flow + SIG_LEN)==false)
-                {
-                    TRACE() << "Cannot allocat memory\n.Exiting\n";
-                    __alive =false;
-                    break;
-                }
-                hlen = s.receiveall( recfrm.buffer(over_flow), content_lengh);
-                if(hlen != content_lengh){
-                    continue;
-                }
-                isjpg = ::is_jpeg(recfrm.buffer(), content_lengh + over_flow);
-                if(isjpg){
-                    recfrm.set_len(content_lengh + over_flow);
-                    recfrm._wh = _imgsz;
-                    recfrm.ready();
-                }else{
-                    recfrm.set_len(0);
+                    recfrm->set_len(0);
+                    if(over_flow>0){
+                        const uint8_t *pafter = (const uint8_t*)(rec + hdrlen);
+                        recfrm->copy(pafter, 0, over_flow);
+                        isjpg = ::is_jpeg(recfrm->buffer(), over_flow);
+                    }
+                    if(isjpg==false){
+                        break;
+                    }
+                    scontent_lengh = strstr(rec,"Content-Length: ");
+                    if(scontent_lengh==0){
+                        break;
+                    }
+                    content_lengh = ::atoi(scontent_lengh + 16);
+                    content_lengh -= over_flow;
+                    if(content_lengh <= 0)
+                    {
+                        break;
+                    }
+                    if(recfrm->realloc(content_lengh + over_flow + SIG_LEN)==false)
+                    {
+                        TRACE() << "Cannot allocat memory\n.Exiting\n";
+                        __alive =false;
+                        break;
+                    }
+                    hlen = s.receiveall( recfrm->buffer(over_flow), content_lengh);
+                    if(hlen != content_lengh){
+                        continue;
+                    }
+                    isjpg = ::is_jpeg(recfrm->buffer(), content_lengh + over_flow);
+                    if(isjpg){
+                        recfrm->set_len(content_lengh + over_flow);
+                        recfrm->_wh = _imgsz;
+                        recfrm->ready();
+                    }else{
+                        recfrm->set_len(0);
+                    }
                 }
             }while(0);
         }// connected

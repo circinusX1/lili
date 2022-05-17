@@ -105,7 +105,7 @@ enum EIMG_FMT{eNONE=-1, eFJPG=0, eNOTJPG, e422};
 #define JPEG_MAGIC        0x12345678
 #define MAX_PIX_MOVE      255
 #define EVENTS_CUST       16
-
+#define ONE_PAGE          4096
 #define EVT_KKEP_ALIVE  0x80
 #define CMD_RECORD      0x1
 #define CMD_SAVLOC      0x2
@@ -149,7 +149,6 @@ struct imglayout_t{
     size_t         _jpgl = 0;
     EIMG_FMT       _jpgf = eFJPG;
     dims_t         _dims = {0,0};
-    dims_t         _cfgdim = {0,0};
     time_t         _now;
 };
 

@@ -45,14 +45,14 @@ void webcast::stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
         if(_frame==nullptr){
             len += EXTRA_SPACE;
             _frame = new uint8_t[len];
-            _buffsz = len + EXTRA_SPACE;
+            _buffsz = len;
         }
         if(len > _buffsz){
             delete[] _frame;
             len += EXTRA_SPACE;
             _frame = new uint8_t[len];
             TRACE() << "renew " << len << "\n";
-            _buffsz = len + EXTRA_SPACE;
+            _buffsz = len;
         }
         ::memcpy(_frame, pb, len);
         _hdr.wh[0]   = imgsz.x;

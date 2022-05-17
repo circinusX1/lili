@@ -71,8 +71,6 @@ int jpeger::cam_to_jpg(imglayout_t& img, const std::string&)
 {
     const uint8_t* pstart = img._camp;
     _imgsize =  _put_jpeg_yuv420p_memory(pstart,
-                                        img._cfgdim.x,
-                                        img._cfgdim.y,
                                         img._dims.x,
                                         img._dims.y,
                                         _jpgq, 0);
@@ -122,8 +120,6 @@ int jpeger::cam_to_bw_for_motion(imglayout_t& img)
 int jpeger::_put_jpeg_yuv420p_memory(const uint8_t *pyuv420,
                                      int width,
                                      int height,
-                                     int iwidth,
-                                     int iheight,
                                      int jpg_quality,
                                      struct tm *tm)
 {
