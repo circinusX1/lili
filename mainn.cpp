@@ -33,7 +33,6 @@
 #include "v4ldevice.h"
 #include "sockserver.h"
 #include "fxxtojpg.h"
-#include "anytojpg.h"
 #include "cbconf.h"
 #include "rtspcam.h"
 #include "localcam.h"
