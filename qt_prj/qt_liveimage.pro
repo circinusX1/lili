@@ -87,7 +87,6 @@ LIBS += -L$$usr/lib/x86_64-linux-gnu
 HEADERS += \
     ../CImg.h \
     ../acamera.h \
-    ../anytojpg.h \
     ../camevents.h \
     ../cbconf.h \
     ../encrypter.h \

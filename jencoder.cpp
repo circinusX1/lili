@@ -1,5 +1,4 @@
 
-#include  "anytojpg.h"
 #include  "fxxtojpg.h"
 #include "jencoder.h"
 
