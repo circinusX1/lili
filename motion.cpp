@@ -33,7 +33,7 @@ mmotion::~mmotion()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void mmotion::_motion(uint8_t pix,
-                     const uint8_t* base_py, uint8_t* pSeen, uint8_t* prowprev, uint8_t* prowcur,
+                      const uint8_t* base_py, uint8_t* pSeen, uint8_t* prowprev, uint8_t* prowcur,
                       int x, int y, int dx, int dy, int & pixels)
 {
     uint8_t Y  = base_py ? *(base_py + ((y*dy)  * _w) + (x*dx)): pix; /// curent pixel
@@ -58,7 +58,7 @@ void mmotion::_motion(uint8_t pix,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-int mmotion::_det_mov_422(const imglayout_t& imgl)
+int mmotion::_det_mov_422(const imglayout_t& imgl, const dims_t& lohi)
 {
     uint8_t* pSeen = _motionbufs[2];
     uint8_t* prowprev = _motionbufs[_mobuf_idx];
@@ -91,17 +91,16 @@ int mmotion::_det_mov_422(const imglayout_t& imgl)
 
         }
     }
-    _meter_show(pSeen);
+    _meter_show(pSeen, lohi);
     _dark /= pixels;
     _mobuf_idx = !_mobuf_idx;
     return _moves;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void mmotion::_meter_show(uint8_t* pSeen)
+void mmotion::_meter_show(uint8_t* pSeen, const dims_t& lohi)
 {
-    static time_t  last = gtc();
-
+    //drow seen rects
     if(_inrect.x != _inrect.X)
     {
         for (int y= _inrect.y+1; y <_inrect.Y-1; y++)
@@ -131,26 +130,30 @@ void mmotion::_meter_show(uint8_t* pSeen)
             *(pSeen + (_outrect.Y * _mw) + x) = (uint8_t)128;
         }
     }
+
+    if(_moves < lohi.x)_moves=0;
+    else if(_moves < lohi.x)_moves=0;
+
     // show percentage on left as bar
-    int percentage = std::min(100,_moves);
-    if(percentage > _mmeter)
-        _mmeter = percentage;
-    else if(_mmeter>0){
-        time_t now = gtc();
-        _mmeter -= ((now-last)/24 + 1);
-        if(_mmeter<0)_mmeter=0;
-        last = now;
+    if(_moves > _maxmoves && _moves < lohi.y)
+    {
+        _maxmoves = _moves;
     }
+    //scale to _maxmoves for _mh
+    // maxmoves -> _mh
+    // curmove  ->  x
+    _mmeter = (_moves*_mh)/_maxmoves;
+
     if(_mmeter>0)
     {
         int y =_mh;
-        int x = 0;
         while(y)
         {
             if(_mmeter < y)
-                *(pSeen + ((_mh-y) * _mw)+x) = (uint8_t)0;
-            else
-                *(pSeen + ((_mh-y) * _mw)+x) = (uint8_t)255;
+                *(pSeen + ((_mh-y) * _mw)) = (uint8_t)0;
+            else{
+                *(pSeen + ((_mh-y) * _mw)+1) = (uint8_t)255;
+            }
             --y;
         }
     }
@@ -158,7 +161,7 @@ void mmotion::_meter_show(uint8_t* pSeen)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // to do image is smaller from digoo cam TODO
-int mmotion::det_mov(const imglayout_t& imgl)
+int mmotion::det_mov(const imglayout_t& imgl, const dims_t& lohi)
 {
     const uint8_t* p = imgl._camp;
     size_t len      = imgl._caml;
@@ -170,7 +173,7 @@ int mmotion::det_mov(const imglayout_t& imgl)
         _calc_rects(imgl._dims.x, imgl._dims.y);
 
         if(fmt==e422){
-            return _det_mov_422(imgl);
+            return _det_mov_422(imgl, lohi);
         }
         else if(fmt==eFJPG && ::is_jpeg(p,len))
         {
@@ -211,7 +214,7 @@ int mmotion::det_mov(const imglayout_t& imgl)
                 }
             }
 
-            _meter_show(pSeen);
+            _meter_show(pSeen, lohi);
             _dark /= pixels;
             _mobuf_idx = !_mobuf_idx;
         }
@@ -294,5 +297,6 @@ void mmotion::_calc_rects(int w, int h, bool force)
 		_motionsz = msz;
 		_moves=0;
 		_mmeter = 0;
+		_maxmoves = _mh;
 	}
 }

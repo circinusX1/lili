@@ -45,10 +45,10 @@ int camevents::_proc_events(const imglayout_t& imgl)
     if(_mt)
     {
         if(imgl._camf==e422){
-            int movedpix =  _mt->det_mov(imgl);
+            int movedpix =  _mt->det_mov(imgl, _mohilo);
             if(movedpix > _mohilo.x && movedpix < _mohilo.y)
             {
-		TRACE() << "moved: " << movedpix << "\n";
+                TRACE() << "moved: " << movedpix << "\n";
                 return uint8_t(movedpix);
             }
         }
@@ -70,8 +70,8 @@ const uint8_t* camevents::getm(int& w, int& h, int& sz)
 }
 
 const event_t&  camevents::proc_events(const imglayout_t& imgl,
-                                        const std::string&,
-                                        uint8_t prep_pred)
+                                       const std::string&,
+                                       uint8_t prep_pred)
 {
     uint32_t now =  gtc();
 
@@ -79,12 +79,7 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
     if(now - _tickmove > _inertiiaitl)
     {
         if(_mt){
-            _event.movepix = _mt->det_mov(imgl);
-            if(_event.movepix < _mohilo.x ||
-               _event.movepix > _mohilo.y)
-            {
-		_event.movepix = 0;
-	    }
+            _event.movepix = _mt->det_mov(imgl,_mohilo);
         }
 
         if( _event.movepix )
@@ -206,7 +201,7 @@ void camevents::get(dims_t& mohilo, int& pixnoise, int& pixdiv, int& imgscale)
 {
     if(_mt)
     {
-         mohilo = _mohilo;
+        mohilo = _mohilo;
         _mt->get(pixnoise, pixdiv, imgscale);
     }
 
