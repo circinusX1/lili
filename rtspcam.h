@@ -4,7 +4,6 @@
 
 #include <string>
 #include <map>
-#include <curl/curl.h>
 #include "os.h"
 #include "webcast.h"
 #include "acamera.h"
@@ -30,7 +29,7 @@ private:
 private:
     std::string             _url,_user,_uri;
     long                    _seq  = 0;
-    unsigned long           _curl_auth = CURLAUTH_NONE;
+    unsigned long           _curl_auth = 0;
     mutexx                  _mut;
     bool                    _ontcp = false;
     pipiefile*              _pipa = nullptr;  //("/tmp/movie.mov");
