@@ -12,7 +12,7 @@
 
 
 Light weight camera designed to run on small ARM Linuxes. Plays animated jpg in the browser,
-Captures images when senses motion, or at certain interval based on settings. 
+Captures images or movie on motion / time lapse. 
 ### Demo:
 
 --
