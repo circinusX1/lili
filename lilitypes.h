@@ -27,8 +27,6 @@ struct dims_t{
     int y;
 };
 
-
-
 class Frame
 {
 public:
@@ -106,16 +104,16 @@ enum EIMG_FMT{eNONE=-1, eFJPG=0, eNOTJPG, e422};
 #define MAX_PIX_MOVE      255
 #define EVENTS_CUST       16
 #define ONE_PAGE          4096
-#define EVT_KKEP_ALIVE  0x80
-#define CMD_RECORD      0x1
-#define CMD_SAVLOC      0x2
-#define EVT_JUST_MOTION      0x4
+#define EVT_WEBCAST       0x80
+#define CMD_RECORD        0x1
+#define CMD_SAVLOC        0x2
+#define EVT_JUST_MOTION   0x4
 #define EVT_MOTION      (0x4|0x80)
 #define EVT_TLAPSE      (0x8|0x80)
 #define EVT_SIGNAL      (0x10|0x80)
 #define EVT_FORCE       (0x20|0x80)
 #define FLG_STAMP       0x40
-
+#define EXTRA_SPACE     4096
 struct  event_t {
     uint8_t     predicate;
     uint16_t    movepix:12;
@@ -152,10 +150,45 @@ struct imglayout_t{
     time_t         _now;
 };
 
+struct WebDblFrame
+{
+    LiFrmHdr*   _hdr      = nullptr;
+    size_t      _cap      = 0;
+    uint8_t*    _frame[2] = {nullptr,nullptr};
+    size_t      _len[2]   = {0,0};
+
+    void copy(const uint8_t* pb, size_t len, int index){
+        if(len > _cap){
+            len += EXTRA_SPACE;
+            _frame[0] = new uint8_t[sizeof(LiFrmHdr) + len];
+            _frame[1] = new uint8_t[sizeof(LiFrmHdr) + len];
+            _cap = len;
+        }
+        _hdr = (LiFrmHdr*)_frame[index];
+        _hdr->len = 0;
+        ::memcpy(_frame[index]+sizeof(LiFrmHdr), pb, len);
+        _len[index] = len;
+    }
+    WebDblFrame(){
+        _frame[0] = new uint8_t[INITIAL_LEN + sizeof(LiFrmHdr)];
+        _frame[1] = new uint8_t[INITIAL_LEN + sizeof(LiFrmHdr)];
+        _cap = INITIAL_LEN;
+        _hdr = (LiFrmHdr*)_frame[0];
+    }
+    ~WebDblFrame(){
+        delete[] _frame[0];
+        delete[] _frame[1];
+    }
+    const uint8_t* buff(int index){return _frame[index];}
+    uint8_t* img(int index){return _frame[index]+sizeof(LiFrmHdr);}
+    LiFrmHdr* hdr(int index){return (LiFrmHdr*)_frame[index];}
+    size_t frm_len(int index){return _len[index] + sizeof(LiFrmHdr);}
+};
+
 
 inline int parse_url(const char* url, char* scheme, size_t
-                    maxSchemeLen, char* host, size_t maxHostLen,
-                    int* port, char* path, size_t maxPathLen) //Parse URL
+                     maxSchemeLen, char* host, size_t maxHostLen,
+                     int* port, char* path, size_t maxPathLen) //Parse URL
 {
     (void)maxPathLen;
     char* schemePtr = (char*) url;

@@ -123,18 +123,38 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
         ::system(_run_app.c_str());
     }
 
+    return _event;
+}
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void camevents::clean_events()
+{
+    _event.movepix = 0;
+    _event.predicate = 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void camevents::save_local(const imglayout_t& imgl,
+                           const std::string&,
+                           uint8_t ,
+                           const std::string& folder)
+{
     if((_event.predicate & FLAG_SAVE && _event.movepix) ||
-            _event.predicate & FLAG_FORCE_SAVE)
+            (_event.predicate & FLAG_FORCE_SAVE) || !folder.empty())
     {
         char fname[256];
+        std::string savloc = _save_loc;
+
+        if(!folder.empty()){
+            savloc = folder;
+        }
 
         if(imgl._camf == eNOTJPG)
         {
             if(time(0) - _mpgnewfile > 3600*24)  /*every day*/
             {
                 _mpgnewfile = time(0);
-                ::sprintf(fname, "%smov_%d.mpeg", _save_loc.c_str(), (int)_mpgnewfile);
+                ::sprintf(fname, "%smov_%d.mpeg", savloc.c_str(), (int)_mpgnewfile);
                 FILE* 		pff = ::fopen(fname,"wb");
                 if(pff){
                     ::fclose(pff);
@@ -142,7 +162,7 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
             }
             else
             {
-                ::sprintf(fname, "%smov_%d.mpeg", _save_loc.c_str(), int(_mpgnewfile));
+                ::sprintf(fname, "%smov_%d.mpeg", savloc.c_str(), int(_mpgnewfile));
                 FILE* 		pff = ::fopen(fname,"ab");
                 long        flen = 0;
                 if(pff)
@@ -159,7 +179,7 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
         }
         else if(imgl._jpgf == eFJPG && _on_max_files>0)
         {
-            ::sprintf(fname, "%si%04d-%06d.jpg", _save_loc.c_str(),_event.movepix, _firstimage);
+            ::sprintf(fname, "%si%04d-%06d.jpg", savloc.c_str(),_event.movepix, _firstimage);
             ++_firstimage;
             if(_firstimage > _on_max_files)  _firstimage = 0;
             FILE* 		pff = ::fopen(fname,"wb");
@@ -169,18 +189,9 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
                 ::fclose(pff);
                 TRACE() << "saving: " << fname << "\n";
                 ::symlink(fname,"tmp/lastimage.jpg");
-
             }
         }
     }
-    return _event;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void camevents::clean_events()
-{
-    _event.movepix = 0;
-    _event.predicate = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

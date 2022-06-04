@@ -5,13 +5,16 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <map>
 #include "logfile.h"
+#include "os.h"
 
 
 extern bool __alive;
 extern std::string empty_string;
 extern int CliPort;
 #define EOS '\0'
+#define     WD_TIME     16
 
 class Cbdler;
 extern Cbdler*      pCONF;
@@ -130,13 +133,55 @@ inline int ParseUrl(const char *u,UrlInfo *urlinfo)
     return 0;
 }
 
+class Wd : public OsThread
+{
+public:
+    virtual void thread_main()
+    {
+        while(__alive)
+        {
+            ::sleep(5);
+            do{
+                AutoLock a(&_m);
+
+                time_t now = time(0);
+                for(const auto& a : _times)
+                {
+                    if(now - a.second > WD_TIME){
+                        GLOGE("THREAD:" << a.first << " is locked");
+                        goto DONE;
+                    }
+                }
+            }while(0);
+        }
+DONE:
+        ::exit(10);
+    }
+
+    void reg()
+    {
+        AutoLock a(&_m);
+        _times[pthread_self()]=time(0);
+    }
+    void pet()
+    {
+        AutoLock a(&_m);
+         _times[pthread_self()]=time(0);
+    }
+
+private:
+    std::map<pthread_t, time_t> _times;
+    umutex                      _m;
+
+} ;
+
+
 #define NPOS std::string::npos
 #define DELETE_PTR(p)   if(p) delete p; p=nullptr
-
 extern char __files_recs[256];// "/var/www/html/liveimage/pipes/VCT"
 extern char __server_key[32];
 extern uint32_t  __camms_key;
-
+extern Wd    Wdog;
 #define CFG (*pCONF)
 
 #endif // MM_H

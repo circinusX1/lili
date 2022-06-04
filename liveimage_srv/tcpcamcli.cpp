@@ -191,19 +191,29 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
         _pfpipe->stream(vf,imgsz);
     }
 
-    if(!_recordname.empty() && _header.event.predicate & CMD_RECORD)
+    if(!_recordname.empty() && (_header.event.predicate & CMD_RECORD))
     {
         char    fn[256];
         constexpr unsigned char red[] = { 255, 0, 0 };
         constexpr unsigned char black[] = { 0, 0, 0 };
 
-        CImg<unsigned char> img;
-        img.load_jpeg_buffer(vf, imgsz);
-        ::snprintf(fn, sizeof(fn),"%s:%s,%d",str_time(), _name.c_str(), _header.event.movepix);
-        img.draw_text(0,0, fn, red,black,1,26);
-        snprintf(fn,sizeof(fn),"%s/img_%05zu.jpg",_fpath.c_str(), _seq++);
-        GLOGI( "Saving " << fn );
-        img.save(fn);
+        try{
+            CImg<unsigned char> img;
+            img.load_jpeg_buffer(vf, imgsz);
+            ::snprintf(fn, sizeof(fn),"%s:%s  %03d %d",str_time(),
+                       _name.c_str(),
+                       _header.event.movepix,
+                       _header.index);
+            img.draw_text(0,0, fn, red,black,1,26);
+            snprintf(fn,sizeof(fn),"%s/img_%05ul.jpg",_fpath.c_str(), _header.index);
+            ++_seq;
+            GLOGI( "Saving " << fn );
+            img.save(fn);
+        }
+        catch(...)
+        {
+            GLOGE("Exception CImg library");
+        }
         if((int)_seq > (int)_maxseq)
         {
             if(!_onmaxseq.empty())
@@ -214,9 +224,10 @@ int TcpCamCli::_deliverChunk(const uint8_t* vf, int imgsz)
                 shell += this->name() + " &";
                 GLOGD("executing" << shell);
                 ::system(shell.c_str());
-                //_tm->run( namex,_onmaxseq,where,namex);
+                //_tm->run( namex,_onmaxseq,where,namex); // thread is stopped
             }
             _save_seq();
+            _seq = 0;
         }
     }
     return clients;

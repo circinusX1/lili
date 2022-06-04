@@ -94,6 +94,7 @@ void Sheller::thread_main()
 {
     PrcCmds  cmd;
     //    int     cams,clis;
+    assert(0);  // stopped june 4 2022
 
     while(__alive && _bstop==0)
     {

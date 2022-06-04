@@ -60,6 +60,7 @@ public:
     void  init_frames();
     void set_motion(const dims_t& mohilo, int pixnoise, int pixdiv, int imgscale);
     void get_motion(dims_t& mohilo, int& pixnoise, int& pixdiv, int& imgscale);
+    void  save_events(const imglayout_t& img, const std::string& folder);
 
 protected:
     camevents       _mt;

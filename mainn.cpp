@@ -207,9 +207,12 @@ void kapture()
                 loopevent = p->proc_events(image);
                 if(p->peer())
                 {
-                    p->peer()->stream(image._jpgp, image._jpgl, img_size,
-                                        p->name(),
-                                        loopevent, image._jpgf);
+                    p->peer()->stream(image._jpgp,
+                                                        image._jpgl,
+                                                        img_size,
+                                                        p->name(),
+                                                        loopevent,
+                                                        image._jpgf);
                 }
                 if(pserver && pserver->has_clients(p->name()))
                 {

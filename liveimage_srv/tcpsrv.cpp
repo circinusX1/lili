@@ -66,6 +66,7 @@ bool    TcpSrv::spin(int cport, int cliport, pfn_cb cb)
     if(_creates(cport, cliport))
     {
         fd_set r,x;
+        Wdog.reg();
         while(__alive)
         {
             ::msleep(16);
@@ -78,6 +79,7 @@ bool    TcpSrv::spin(int cport, int cliport, pfn_cb cb)
             }
             cb();
             _p.kill_times();
+            Wdog.pet();
         }
     }
     return true;
@@ -198,13 +200,13 @@ bool    TcpSrv::_on_cam()
                 GLOGW("Cannot invalid header rec_off 2");
                 throw RawSock::CAM;
             }
-            do{
+            do{ // if a http comes on camera port
                 char* p = (char*)&hdr;
                 std::string sp = std::to_string(_cport);
                 if(*p && ::strstr(p, sp.c_str())){
                     HttpRequestParser   parser;
                     Request             req;
-                    const char*         end = p+sizeof(hdr)-1;
+                    const char*         end = p + sizeof(hdr)-1;
                     p[sizeof(hdr)-1] = '\0';
                     parser.parse(req, p, end);
                     _show_dummy(s , req);
@@ -241,11 +243,15 @@ bool    TcpSrv::_on_cam()
                 _p.record_cam(hdr.camname);
                 if(! (hdr.event.predicate & EVT_KEEP_ALIVE))
                 {
-                    GLOGW("CAM:" << hdr.camname <<  ", no client was here, no recors required ");
+                    GLOGW("CAM:" << hdr.camname <<  " got header event:norecord " << hdr.index);
                     throw RawSock::CAM;
                 }
+                else
+                {
+                    GLOGW("CAM:" << hdr.camname <<  " event  "  << hdr.index);
+                }
             }
-            GLOGW("camera  "<< hdr.camname << " accepted");
+            GLOGW("camera  "<< hdr.camname << " ACCEPTED");
 
             RawSock* pcam = nullptr;
             if(hdr.format==0)
@@ -260,6 +266,7 @@ bool    TcpSrv::_on_cam()
         }
         catch(RawSock::STYPE &t)
         {
+            ::msleep(512):
             GLOGW("Closing cam connection");
             s.destroy();
         }

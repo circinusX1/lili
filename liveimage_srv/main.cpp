@@ -1,4 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "os.h"
 #include "sock.h"
 #include "rawsock.h"
@@ -26,8 +27,8 @@ char        __files_recs[256];
 bool        __alive = true;
 char        __server_key[32] = {0};
 Encryptor*  pENC;
-
 Cbdler*     pCONF;
+
 
 std::string empty_string;
 
@@ -66,6 +67,11 @@ static void loop_callback();
  * @param argv
  * @return
  */
+
+Wd    Wdog;
+
+
+
 int main(int argc,char *argv[])
 {
     OneProc ps (12841);         // singleton,limit this instance to 1
@@ -92,7 +98,7 @@ int main(int argc,char *argv[])
     ::strncpy(__files_recs,cdb["records"].value().c_str(),sizeof(__files_recs));
     if(::access(__files_recs,0)!=0)
     {
-        std::cout << "Canot find: " << argv[4] <<". Please create the folder\n";
+        std::cout << "Canot find: " << __files_recs <<". Please create the folder\n";
         exit(-2);
     }
 
@@ -124,6 +130,7 @@ int main(int argc,char *argv[])
     tm.bind(&p);
     GLOGI(strweb_time());
     Sigs();
+    Wdog.start_thread();
     p.start_thread();
     l.spin(camport,cliport,loop_callback);
     p.stop_thread();

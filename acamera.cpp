@@ -56,8 +56,18 @@ const uint8_t* acamera::getm(int& w, int& h, int& sz)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const event_t&  acamera::proc_events(const imglayout_t& img)
 {
-    return _mt.proc_events(img, _name, _predicate);
+    const event_t& e = _mt.proc_events(img, _name, _predicate);
+    _mt.save_local(img, _name, _predicate, std::string());
+    return e;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void  acamera::save_events(const imglayout_t& img, const std::string& folder)
+{
+    _mt.save_local(img, _name, _predicate, folder);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void  acamera::clean_events()
