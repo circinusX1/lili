@@ -22,6 +22,7 @@ void     Pool::closeall()
 {
     //_tm.update(0,0);
     AutoLock a(&_m);
+
     for(auto& a : _pool)
     {
         DELETE_PTR(a.second->_cam);
@@ -36,7 +37,6 @@ void     Pool::closeall()
         }
         delete pr;
     }
-
     _pool.clear();
 }
 
@@ -48,10 +48,15 @@ void     Pool::closeall()
 TcpCamCli*   Pool::has(const std::string& name)
 {
     AutoLock a(&_m);
-    kconiterator it = _pool.find(name);
-    return it==_pool.end() ?
-                nullptr :
-                (*it).second->_cam;
+
+    if(_pool.size()){
+        kconiterator it = _pool.find(name);
+
+        return it==_pool.end() ?
+                    nullptr :
+                    (*it).second->_cam;
+    }
+    return nullptr;
 }
 
 
@@ -63,6 +68,9 @@ TcpCamCli*   Pool::has(const std::string& name)
 bool    Pool::has(const RawSock& sin)const
 {
     AutoLock a(&_m);
+    if(_pool.size()==0){
+        return false;
+    }
     for(const auto& a : _pool)
     {
         Pair* pr = a.second;
@@ -86,6 +94,9 @@ bool    Pool::has(const RawSock& sin)const
  */
 Pool::Pair*  Pool::_has(const std::string& name)
 {
+    if(_pool.size()==0){
+        return nullptr;
+    }
     AutoLock a(&_m);
     coniterator it = _pool.find(name);
     return it==_pool.end() ? nullptr : (*it).second;
@@ -146,6 +157,9 @@ std::string Pool::get_cams(const std::string& host,bool webreq)const
 const LiFrmHdr* Pool::getChannelHeader(const char* channel)const
 {
     AutoLock a(&_m);
+    if(_pool.size()==0){
+        return nullptr;
+    }
 
     for(const auto& a : _pool)
     {
@@ -172,12 +186,13 @@ void Pool::thread_main()
         do{
             AutoLock a(&_m);
             _checkNew(dirty);
-            ndfs = _fdSet(fdr,fdw,fdx);
-            if(ndfs)
-            {
-                dirty = _fdCheck(fdr,fdw,fdx,ndfs);
-            }
         }while(0);
+
+        ndfs = _fdSet(fdr,fdw,fdx);
+        if(ndfs)
+        {
+            dirty = _fdCheck(fdr,fdw,fdx,ndfs);
+        }
         ::usleep(4000);
     }
     _tm.signal_to_stop();
@@ -217,6 +232,8 @@ int Pool::_fdSet(fd_set& fdr,fd_set& fdw, fd_set& fdx)
     FD_ZERO(&fdw);
     FD_ZERO(&fdx);
 
+    AutoLock a(&_m);
+
     for(const auto& a : _pool)
     {
         FD_SET(a.second->_cam->socket(),&fdr);
@@ -245,7 +262,6 @@ int Pool::_fdSet(fd_set& fdr,fd_set& fdw, fd_set& fdx)
  * @return
  */
 
-RawSock * CS;
 bool Pool::_fdCheck(fd_set& fdr,fd_set& fdw,fd_set& fdx,int ndfs)
 {
     bool    dirty = false;
@@ -259,7 +275,6 @@ bool Pool::_fdCheck(fd_set& fdr,fd_set& fdw,fd_set& fdx,int ndfs)
         return false;    //dirty
     }
     if(sel==0){ return true; }
-
 
     for(auto& a : _pool)
     {
@@ -292,6 +307,7 @@ bool Pool::_fdCheck(fd_set& fdr,fd_set& fdw,fd_set& fdx,int ndfs)
         }
 
     }
+
     return dirty;
 }
 
@@ -357,7 +373,7 @@ void Pool::_checkNew(bool dirty)
 
 void Pool::killSocket(const Request& req)
 {
-    AutoLock a(&_m);
+//    AutoLock a(&_m);
 }
 
 /**
@@ -448,6 +464,8 @@ void Pool::_add_client(Pair* pcamerain,RawSock* pcs)
 bool Pool::has_cam(const std::string& pcsname)
 {
     AutoLock a(&_m);
+    if(_pool.size()==0)return false;
+
     return _pool.find(pcsname)!=_pool.end();
 }
 
@@ -462,11 +480,15 @@ void Pool::_add_cam(RawSock* pcs)
     p->_cam = (TcpCamCli*)(pcs);
     p->_cam->bind(nullptr,false);
     p->_clis.clear();
+
+
     if(_pool.find(pcs->name())!=_pool.end())
     {
         _kill_conn(_pool[pcs->name()]->_cam);
         delete _pool[pcs->name()];
     }
+    AutoLock a(&_m);
+
     _pool[pcs->name()] = p;
     size_t seq = _seqs[pcs->name()];
     GLOGD(" reindexing file saving at " << seq);
@@ -568,7 +590,7 @@ void Pool::_kill_conn(RawSock* ps, bool trw)
 {
     ps->destroy();
     _seqs[ps->name()] = ps->seq();
-    GLOGD(" KILLING CAM CONN  file saving at " << ps->seq());
+    GLOGD(" KILLING CAM CONN  file saving seq at " << ps->seq());
 
     if(trw)
         throw ps->type();
