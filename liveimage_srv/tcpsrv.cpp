@@ -266,9 +266,10 @@ bool    TcpSrv::_on_cam()
         }
         catch(RawSock::STYPE &t)
         {
-            ::msleep(512):
+            msleep(32);
             GLOGW("Closing cam connection");
             s.destroy();
+            msleep(32);
         }
     }
     return true;

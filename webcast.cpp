@@ -24,15 +24,17 @@ webcast::webcast(const std::string& name):imgsink(name)
     _pool_intl   = CFG["webcast"]["pool_intl"].to_int();
     _cache       = CFG["webcast"]["cache"].value();
     _maxcache    = CFG["webcast"]["cache"].to_int(1);
-    if(_cache.empty()) { _cache = "/tmp/lili"; }else{
-        if(_cache.back()!='/')_cache+="/";
+    if(!_cache.empty())  {
+        if(_cache.back()!='/')
+            _cache+="/";
+        std::string sys = "mkdir -p ";
+        sys+=_cache;
+        ::system(sys.c_str());
+        _cache += name; _cache += ".cache";
+        FILE* pf = ::fopen(_cache.c_str(),"wb");
+        ::fclose(pf);
     }
-    std::string sys = "mkdir -p ";
-    sys+=_cache;
-    ::system(sys.c_str());
-    _cache += name; _cache += ".cache";
-    FILE* pf = ::fopen(_cache.c_str(),"wb");
-    ::fclose(pf);
+
     if(_pool_intl<6)_pool_intl=10;
     if(_cast_fps>30) _cast_fps=30;
     else if(_cast_fps<1)_cast_fps=1;
@@ -77,11 +79,14 @@ bool webcast::stream(const uint8_t* pb,
         if( ((_hasevents && !_casting ) || time(0)-_send_time > STUCK_IN_SEND )
             && _cached < _maxcache )
         {
-            static int everysec = time(0);
-            if(time(0)-everysec>1)
+            if(!_cache.empty())
             {
-                everysec = time(0);
-                _cache_frame(_iframe);
+                static int everysec = time(0);
+                if(time(0)-everysec>1)
+                {
+                    everysec = time(0);
+                    _cache_frame(_iframe);
+                }
             }
         }
         _iframe = ! _iframe;
@@ -232,7 +237,7 @@ bool webcast::_go_streaming(const char* host, int port)
                 iframe = !_iframe;
             }while(0);
             by = _sign_in();
-            if(_cached && by)
+            if(_cached && by && !_cache.empty())
             {
                 _send_cache(iframe);
             }

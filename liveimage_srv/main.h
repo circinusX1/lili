@@ -14,7 +14,7 @@ extern bool __alive;
 extern std::string empty_string;
 extern int CliPort;
 #define EOS '\0'
-#define     WD_TIME     16
+#define     WD_TIME     22
 
 class Cbdler;
 extern Cbdler*      pCONF;
