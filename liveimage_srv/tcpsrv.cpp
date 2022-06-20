@@ -97,7 +97,7 @@ int   TcpSrv::_creates(int cport, int cliport)
     {
         fcntl(_cam.socket(), F_SETFD, FD_CLOEXEC);
         _cam.set_blocking(0);
-        if(_cam.listen(4)!=0)
+        if(_cam.listen(32)!=0)
         {
             _cam.destroy();
             return 0;
@@ -192,7 +192,7 @@ bool    TcpSrv::_on_cam()
 
     if(_cam.accept(s)>0)
     {
-        msleep(128);
+        msleep(1);
         try{
             int bytes = s.receive((uint8_t*)&hdr, sizeof(hdr)); //header string
             if(bytes != sizeof(hdr))
