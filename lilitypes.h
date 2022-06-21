@@ -104,16 +104,25 @@ enum EIMG_FMT{eNONE=-1, eFJPG=0, eNOTJPG, e422};
 #define MAX_PIX_MOVE      255
 #define EVENTS_CUST       16
 #define ONE_PAGE          4096
-#define EVT_WEBCAST       0x80
+#define EVT_KEEP_ALIVE       0x80
 #define CMD_RECORD        0x1
 #define CMD_SAVLOC        0x2
 #define EVT_JUST_MOTION   0x4
-#define EVT_MOTION      (0x4|0x80)
-#define EVT_TLAPSE      (0x8|0x80)
-#define EVT_SIGNAL      (0x10|0x80)
-#define EVT_FORCE       (0x20|0x80)
 #define FLG_STAMP       0x40
 #define EXTRA_SPACE     4096
+
+
+#define EVT_KEEP_ALIVE  0x80
+#define CMD_RECORD      0x1
+#define CMD_SAVLOC      0x2
+#define EVT_MOTION      (0x4|EVT_KEEP_ALIVE)
+#define EVT_TLAPSE      (0x8|EVT_KEEP_ALIVE)
+#define EVT_SIGNAL      (0x10|EVT_KEEP_ALIVE)
+#define EVT_FORCE       (0x20|EVT_KEEP_ALIVE)
+
+
+
+
 struct  event_t {
     uint8_t     predicate;
     uint16_t    movepix:12;

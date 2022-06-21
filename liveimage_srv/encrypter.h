@@ -24,6 +24,9 @@ public:
 
     void encrypt(unsigned int val,uint8_t* out)
     {
+        if(_key=="XXXX"){
+            return ;
+        }
         char text[32];
         sprintf(text,"%u",val);
         out[0]=0;
@@ -36,6 +39,10 @@ public:
 
     unsigned int  decrypt(const uint8_t* text)
     {
+        if(_key=="XXXX"){
+            return 0;
+        }
+
         char    loco[32] = {0};
         uint8_t len = text[0];
         const uint8_t* pc = text+1;

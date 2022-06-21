@@ -7,40 +7,10 @@
 #include <vector>
 #include "sock.h"
 #include "logger.h"
-
+#include "../lilitypes.h"
 #define MAX_BUFF  128000
 
 extern std::string empty_string;
-#define          PACK_ALIGN_1   __attribute__((packed,aligned(1)))
-
-struct  event_t {
-    uint8_t     predicate;
-    uint16_t    movepix:12;
-}PACK_ALIGN_1;
-
-#define EVT_KEEP_ALIVE  0x80
-#define CMD_RECORD      0x1
-#define CMD_SAVLOC      0x2
-#define EVT_MOTION      (0x4|EVT_KEEP_ALIVE)
-#define EVT_TLAPSE      (0x8|EVT_KEEP_ALIVE)
-#define EVT_SIGNAL      (0x10|EVT_KEEP_ALIVE)
-#define EVT_FORCE       (0x20|EVT_KEEP_ALIVE)
-
-
-struct  LiFrmHdr{
-    uint32_t    len;
-    uint32_t    magic;
-    uint32_t    mac;
-    uint32_t    index;
-    uint16_t    random;
-    uint16_t    udppunch;
-    uint16_t    wh[2];
-    uint8_t     format:6;
-    uint8_t     insync:2;
-    event_t     event;
-    uint8_t     challange[16];
-    char        camname[16];
-}PACK_ALIGN_1;
 
 class Sheller;
 class RawSock : public tcp_cli_sock

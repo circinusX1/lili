@@ -234,24 +234,25 @@ bool    TcpSrv::_on_cam()
             }
 
             if(checks==0){
-                GLOGW("camera  "<<hdr.camname<<" not configured");
+                GLOGW("camera  ["<< hdr.camname<<"] not configured");
                 throw RawSock::CAM;
             }
-
+            // no client
             if(_p.client_was_here(std::string(hdr.camname))==false)
             {
                 _p.record_cam(hdr.camname);
                 if(! (hdr.event.predicate & EVT_KEEP_ALIVE))
                 {
-                    GLOGW("CAM:" << hdr.camname <<  " got header event:norecord " << hdr.index);
+                    GLOGW("CAM:" << hdr.camname <<
+                                " got header pred: KEEP_ALIV=0 " << hdr.index);
                     throw RawSock::CAM;
                 }
                 else
                 {
-                    GLOGW("CAM:" << hdr.camname <<  " event  "  << hdr.index);
+                    GLOGW("CAM:" << hdr.camname <<  " event KEEP_ALIVE "  << hdr.index);
                 }
             }
-            GLOGW("camera  "<< hdr.camname << " ACCEPTED");
+            GLOGW("camera  ["<< hdr.camname << "] ACCEPTED");
 
             RawSock* pcam = nullptr;
             if(hdr.format==0)

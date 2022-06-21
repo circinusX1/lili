@@ -13,7 +13,7 @@
 #define WE_TRIED_TO_SEND_CACHE 2
 extern bool __alive;
 
-// EVT_WEBCAST
+// EVT_KEEP_ALIVE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 webcast::webcast(const std::string& name):imgsink(name)
@@ -71,18 +71,19 @@ bool webcast::stream(const uint8_t* pb,
         ph->magic    = _magic;
         ph->insync   = _insync;
 
+        _noframe = 0;
         ::strncpy(ph->camname,name.c_str(),sizeof(LiFrmHdr::camname));
         if(_hasevents==0)
-            _hasevents = (event.predicate & EVT_WEBCAST);
+            _hasevents = (event.predicate & EVT_KEEP_ALIVE);
 
         // while we connect we can loose some frames
         if( ((_hasevents && !_casting ) || time(0)-_send_time > STUCK_IN_SEND )
-            && _cached < _maxcache )
+               && _cached < _maxcache )
         {
             if(!_cache.empty())
             {
                 static int everysec = time(0);
-                if(time(0)-everysec>1)
+                if(time(0)-everysec>2)
                 {
                     everysec = time(0);
                     _cache_frame(_iframe);
@@ -217,7 +218,7 @@ bool webcast::_go_streaming(const char* host, int port)
     LiFrmHdr*       ph;
     LiFrmHdr        jhdr;
 
-    _noframe = false;
+    _noframe = 0;
     _s.destroy();
     _s.pre_set(32768,1024);
     if(_s.create(port))
