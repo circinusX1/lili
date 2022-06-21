@@ -219,7 +219,7 @@ int mmotion::det_mov(const imglayout_t& imgl, const dims_t& lohi)
             _mobuf_idx = !_mobuf_idx;
         }
         else
-        {_noframe
+        {
             ::memset(_motionbufs[2], 0x80, _motionsz);
         }
     }

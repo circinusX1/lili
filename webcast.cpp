@@ -73,12 +73,19 @@ bool webcast::stream(const uint8_t* pb,
 
         _noframe = 0;
         ::strncpy(ph->camname,name.c_str(),sizeof(LiFrmHdr::camname));
-        if(_hasevents==0)
+
+        if(_hasevents == 0)
+        {
             _hasevents = (event.predicate & EVT_KEEP_ALIVE);
+            if(_hasevents){
+                TRACE() << " Camera has events ";
+            }
+        }
 
         // while we connect we can loose some frames
-        if( ((_hasevents && !_casting ) || time(0)-_send_time > STUCK_IN_SEND )
-               && _cached < _maxcache )
+        if( ((_hasevents && !_casting ) ||
+              time(0)-_send_time > STUCK_IN_SEND ) &&
+              _cached < _maxcache )
         {
             if(!_cache.empty())
             {
@@ -133,6 +140,7 @@ void webcast::thread_main()
             AutoLock a(&_mut);
             hasevents = _hasevents;
             _hasevents = 0;
+            TRACE() << "Camera events before streaming: " << hasevents << "\n";
         }while(0);
         if(time(0)-_ctime > _pool_intl  || hasevents )
         {
@@ -144,6 +152,7 @@ void webcast::thread_main()
             _send_time = _ctime;
             if(_cached && _last_cache_time - _ctime > WE_TRIED_TO_SEND_CACHE)
             {
+                TRACE()<< "     Go caching \n";
                 _go_streaming(host, port);
                 _cached = 0;
             }
@@ -240,6 +249,7 @@ bool webcast::_go_streaming(const char* host, int port)
             by = _sign_in();
             if(_cached && by && !_cache.empty())
             {
+                TRACE()<< "sending cache\n";
                 _send_cache(iframe);
             }
             while(by>0 && _s.isopen() && __alive && _noframe < MAX_NO_FRM_MS)
@@ -249,10 +259,18 @@ bool webcast::_go_streaming(const char* host, int port)
                     AutoLock a(&_mut);
                     iframe = !_iframe;
                 }while(0);
+
                 IN_SYNC();
+
                 ph = _frame.hdr(iframe);
                 if(ph->len)
                 {
+/*
+                    if(ph->event.predicate & EVT_KEEP_ALIVE)
+                    {
+                        TRACE()<< "Frame with predicate: EVT_KEEP_AVLIE\n";
+                    }
+*/
                     CHECK_SEND(ph, sizeof(LiFrmHdr));
                     CHECK_SEND(_frame.img(iframe),ph->len);
                     _noframe = 0;
@@ -262,8 +280,8 @@ bool webcast::_go_streaming(const char* host, int port)
                     _noframe += frm_intl;
                 }
                 ph->len = 0;
-                ph->event.movepix = 0;
-                ph->event.predicate = 0;
+//                ph->event.movepix = 0;
+//                ph->event.predicate = 0;
                 _casting = true;
                 _send_time = time(0);
 END_WILE:
