@@ -39,7 +39,8 @@ rm bin
 mkdir bin
 cmake .
 make
-cp ./liveimage.konf bin
+## rename konf file
+cp ./liveimage.sample_konf bin/liveimage.konf
 cp ./liveimage bin
 echo "edit and configure liveimage.konf"
 echo "Thx"
@@ -48,7 +49,8 @@ echo "Thx"
 
 ##### Camera as server 
 
-Browse the konf file and make adjustments. Create the I{'save_loc'} location and give RW access for the user that runs liveimage
+Browse the konf file and make adjustments. 
+#### Create the I{'save_loc'} location and give RW access for the user that runs liveimage (aka: www-data:you & 775)
 
 ###### Tested on
 
