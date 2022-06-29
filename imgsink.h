@@ -14,7 +14,7 @@ public:
     virtual ~imgsink();
     virtual bool init(const dims_t&)=0;
     virtual bool stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
-                        const std::string& name, const event_t& event, EIMG_FMT eift)=0;
+                        const std::string& name, const event_t& event, EIMG_FMT eift, time_t now)=0;
     virtual bool spin() = 0;
     const std::string& name()const { return _name; }
     virtual const std::string cache()=0;

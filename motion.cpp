@@ -20,6 +20,7 @@ mmotion::mmotion(const dims_t& wh, const Cbdler::Node& n):_w(wh.x),_h(wh.x)
 	if(_imgscale<1)				_imgscale=1;
 	else if(_imgscale>16)		_imgscale=16;
 	if(_noisediv<4)_noisediv=4;
+	else if(_noisediv>32)_noisediv=32;
 	_calc_rects(wh.x,wh.y);
 }
 
@@ -54,7 +55,6 @@ void mmotion::_motion(uint8_t pix,
     }
     *(pSeen + (y * _mw)+x) = (uint8_t)diff;
     ++pixels;
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

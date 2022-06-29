@@ -24,6 +24,7 @@ webcast::webcast(const std::string& name):imgsink(name)
     _pool_intl   = CFG["webcast"]["pool_intl"].to_int();
     _cache       = CFG["webcast"]["cache"].value();
     _maxcache    = CFG["webcast"]["cache"].to_int(1);
+    _cacheintl    = CFG["webcast"]["cache"].to_int(2);
     if(!_cache.empty())  {
         if(_cache.back()!='/')
             _cache+="/";
@@ -32,7 +33,9 @@ webcast::webcast(const std::string& name):imgsink(name)
         ::system(sys.c_str());
         _cache += name; _cache += ".cache";
         FILE* pf = ::fopen(_cache.c_str(),"wb");
-        ::fclose(pf);
+        if(pf){
+            ::fclose(pf);
+        }
     }
 
     if(_pool_intl<6)_pool_intl=10;
@@ -55,7 +58,7 @@ bool webcast::stream(const uint8_t* pb,
                      const dims_t& imgsz,
                      const std::string& name,
                      const event_t& event,
-                     EIMG_FMT eift)
+                     EIMG_FMT eift, time_t now)
 {
     if(len){
         AutoLock a(&_mut);
@@ -89,10 +92,9 @@ bool webcast::stream(const uint8_t* pb,
         {
             if(!_cache.empty())
             {
-                static int everysec = time(0);
-                if(time(0)-everysec>2)
+                if(now-_last_frame>_cacheintl)
                 {
-                    everysec = time(0);
+                    _last_frame = now;
                     _cache_frame(_iframe);
                 }
             }
@@ -321,6 +323,7 @@ void webcast::_send_cache(int iframe)
                 TRACE()<< "-->sending cached frame "<< hdr.index << "," << hdr.len <<"\n";
             }
             if(::feof(pf)){ break; }
+            ::msleep(32);
         }
 DONE:
         ::fclose(pf); ::msleep(1);

@@ -41,7 +41,6 @@ private:
     int         _innertia       ;
     int         _inertiiaitl    ;
     int         _time_lapse     ;
-    int         _dark_lapse     ;
     int         _dark_motion    ;
     int         _one_shot       ;
     std::string _save_loc       ;

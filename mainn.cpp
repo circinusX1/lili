@@ -208,11 +208,11 @@ void kapture()
                 if(p->peer())
                 {
                     p->peer()->stream(image._jpgp,
-                                                        image._jpgl,
-                                                        img_size,
-                                                        p->name(),
-                                                        loopevent,
-                                                        image._jpgf);
+                                        image._jpgl,
+                                        img_size,
+                                        p->name(),
+                                        loopevent,
+                                        image._jpgf,image._now);
                 }
                 if(pserver && pserver->has_clients(p->name()))
                 {

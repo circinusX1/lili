@@ -24,8 +24,7 @@ camevents::camevents(const dims_t& wh, const Cbdler::Node& np)
     _innertia       = n["innertia"].to_int(0);
     _inertiiaitl    = n["innertia"].to_int(1);
     _time_lapse     = n["time_lapse"].to_int();
-    _dark_lapse     = n["dark_comp"].to_int(0);
-    _dark_motion    = n["dark_comp"].to_int(1);
+    _dark_motion    = n["dark_limit"].to_int(0);
     _save_loc       = n["save_loc"].value();
     _max_size       = n["max_movie"].to_int();
     _on_max_files   = n["on_max_files"].to_int(0);
@@ -113,7 +112,7 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
         }
     }
 
-    if(_mt && _mt->darkav() < _dark_lapse)
+    if(_mt && _mt->darkav() < _dark_motion)
     {
         _event.predicate &= ~EVT_TLAPSE;
         _event.predicate &= ~EVT_MOTION;

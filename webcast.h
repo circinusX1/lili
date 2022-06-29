@@ -24,7 +24,7 @@ public:
     virtual ~webcast();
     virtual void thread_main();
     virtual bool stream(const uint8_t* pb, size_t len, const dims_t& imgsz,
-                        const std::string& name, const event_t& event, EIMG_FMT eift);
+                        const std::string& name, const event_t& event, EIMG_FMT eift, time_t ct);
     void kill();
     virtual bool spin();
     virtual bool init(const dims_t&);
@@ -42,6 +42,7 @@ private:
     int8_t          _iframe = 0;
     bool            _headered = false;
     time_t          _last_clicheck=0;
+    time_t          _last_frame=0;
     tcp_cli_sock    _s;
     size_t          _buffsz=0;
     int             _cast_fps = 1;
@@ -53,6 +54,7 @@ private:
     int             _hasevents = 0;
     std::string     _cache;
     int             _maxcache;
+    int             _cacheintl=1000;
     int             _cached = 0;
     int             _noframe = 0;
     int             _frmidx = 0;
