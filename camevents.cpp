@@ -93,8 +93,9 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
             }
         }
         if(_event.movepix){
-            TRACE() << "movpix = " << _event.movepix << "\n";
+            TRACE() << "MOTIONEV = movpix = " << _event.movepix << "\n";
             _event.predicate |= EVT_MOTION;
+
         }else{
             _event.predicate &= ~EVT_MOTION;
         }
@@ -118,7 +119,9 @@ const event_t&  camevents::proc_events(const imglayout_t& imgl,
         _event.predicate &= ~EVT_MOTION;
     }
 
-    if((_event.predicate & EVT_JUST_MOTION) != 0){
+    if((_event.predicate & EVT_JUST_MOTION) != 0 &&
+        !_run_app.empty())
+    {
         ::system(_run_app.c_str());
     }
 

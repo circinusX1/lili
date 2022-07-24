@@ -61,7 +61,6 @@ const event_t&  acamera::proc_events(const imglayout_t& img)
     return e;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void  acamera::save_events(const imglayout_t& img, const std::string& folder)
 {
