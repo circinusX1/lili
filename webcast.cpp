@@ -113,8 +113,12 @@ void webcast::_cache_frame(int iframe)
         TRACE()<< "caching frame [][][]"<< ph->index <<"\n";
         ++_cached;
         FILE* pf = ::fopen(_cache.c_str(),"ab");
-        ::fwrite(_frame.buff(iframe),1,_frame.frm_len(iframe),pf);
-        ::fclose(pf);
+	if(pf==nullptr)
+	        pf = ::fopen(_cache.c_str(),"wb");
+	if(pf){
+	        ::fwrite(_frame.buff(iframe),1,_frame.frm_len(iframe),pf);
+        	::fclose(pf);
+	}
         _last_cache_time = time(0);
     }
 }
