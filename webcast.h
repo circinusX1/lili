@@ -1,6 +1,8 @@
 #ifndef WEBCAST_H
 #define WEBCAST_H
 
+#include <atomic>
+#include <thread>
 #include "os.h"
 #include "sock.h"
 #include "sockserver.h"
@@ -29,6 +31,7 @@ public:
     virtual bool spin();
     virtual bool init(const dims_t&);
     const std::string cache(){return _cache;}
+
 private:
     bool _go_streaming(const char* host, int port);
     void _cache_frame(int iframe);
@@ -50,18 +53,17 @@ private:
     uint32_t        _srv_key = 0;
     std::string     _security;
     Encryptor       _enc;
-    bool            _casting = false;
+    std::atomic<bool> _casting = false;
     int             _hasevents = 0;
     std::string     _cache;
-    int             _maxcache;
+    int             _maxcache=32;
     int             _cacheintl=1000;
-    int             _cached = 0;
+    std::atomic<int> _cached = 0;
     int             _noframe = 0;
     int             _frmidx = 0;
     uint32_t        _magic;         //       = JPEG_MAGIC;
     uint8_t         _insync;        //      = CFG["webcast"]["insync"].to_int();
     time_t          _ctime=0;
-    time_t          _last_cache_time = 0;
     time_t          _send_time = 0;
 
 };

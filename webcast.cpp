@@ -86,17 +86,14 @@ bool webcast::stream(const uint8_t* pb,
         }
 
         // while we connect we can loose some frames
-        if( ((_hasevents && !_casting ) ||
-             time(0)-_send_time > STUCK_IN_SEND ) &&
-                _cached < _maxcache )
+        if(!_cache.empty())
         {
-            if(!_cache.empty())
+            if(_cached.load() < _maxcache &&
+                _casting.load() == false &&
+                now - _last_frame > _cacheintl)
             {
-                if(now-_last_frame>_cacheintl)
-                {
-                    _last_frame = now;
-                    _cache_frame(_iframe);
-                }
+                _last_frame = now;
+                _cache_frame(_iframe);
             }
         }
         _iframe = ! _iframe;
@@ -111,15 +108,14 @@ void webcast::_cache_frame(int iframe)
     if(ph->event.predicate & EVT_KEEP_ALIVE)
     {
         TRACE()<< "caching frame [][][]"<< ph->index <<"\n";
-        ++_cached;
+        _cached++;
         FILE* pf = ::fopen(_cache.c_str(),"ab");
-	if(pf==nullptr)
-	        pf = ::fopen(_cache.c_str(),"wb");
-	if(pf){
-	        ::fwrite(_frame.buff(iframe),1,_frame.frm_len(iframe),pf);
-        	::fclose(pf);
-	}
-        _last_cache_time = time(0);
+        if(pf==nullptr)
+            pf = ::fopen(_cache.c_str(),"wb");
+        if(pf){
+            ::fwrite(_frame.buff(iframe),1,_frame.frm_len(iframe),pf);
+            ::fclose(pf);
+        }
     }
 }
 
@@ -151,7 +147,7 @@ void webcast::thread_main()
             _hasevents = 0;
             TRACE() << "Thread events: " << hasevents << "\n";
         }while(0);
-        if(time(0)-_ctime > _pool_intl  || hasevents )
+        if(time(0)-_ctime > _pool_intl  || hasevents ||_cached.load())
         {
             TRACE()<< "Go streaming ----- \n";
             _casting = false;
@@ -159,12 +155,6 @@ void webcast::thread_main()
             TRACE()<< "Done streaming ----- \n";
             _ctime = time(0);
             _send_time = _ctime;
-            if(_cached && _last_cache_time - _ctime > WE_TRIED_TO_SEND_CACHE)
-            {
-                TRACE()<< "     Go caching \n";
-                _go_streaming(host, port);
-                _cached = 0;
-            }
         }
         if(!hasevents){
             ::msleep(MAX_NO_FRM_MS);
@@ -180,30 +170,30 @@ void webcast::kill()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #define CHECK_SEND(data_, dlen_)                             \
-    by=_s.sendall((const uint8_t*)data_, (int)dlen_);        \
+by=_s.sendall((const uint8_t*)data_, (int)dlen_);        \
     if(by!=(int)dlen_){                                      \
-    TRACE() << "Socket Error "<< dlen_ <<" bytes != "<< by <<"sent , errno:"<< errno <<"\n"; \
-    goto DONE;                                           \
-    }
+        TRACE() << "Socket Error "<< dlen_ <<" bytes != "<< by <<" sent , errno:"<< errno <<"\n"; \
+        goto DONE;                                           \
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///
 //////////////////////////////////////////////////////////////////////////////////////////////////
 #define IN_SYNC()    if(_frame.hdr(iframe)->insync)                 \
 {         \
-    needsframe = false;         \
-    TRACE() << "WAITING \r\n" ;         \
-    by = _s.receiveall((uint8_t*)&jhdr, sizeof(jhdr));         \
-    if(by != sizeof(jhdr)){         \
-    TRACE() << "REC ERROR " << by <<", "<< _s.error() << "\n";         \
-    goto DONE;         \
+        needsframe = false;         \
+        TRACE() << "WAITING \r\n" ;         \
+        by = _s.receiveall((uint8_t*)&jhdr, sizeof(jhdr));         \
+        if(by != sizeof(jhdr)){         \
+            TRACE() << "REC ERROR " << by <<", "<< _s.error() << "\n";         \
+            goto DONE;           \
     }         \
-    if(jhdr.len==0){         \
-    needsframe=true;         \
+        if(jhdr.len==0){         \
+            needsframe=true;     \
     }         \
-    if(needsframe==false){         \
-    goto END_WILE;         \
+        if(needsframe==false){     \
+            goto END_WILE;         \
     }         \
-    }
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -211,18 +201,25 @@ int webcast::_sign_in()
 {
     LiFrmHdr        jhdr;
     int             by;
+    char rec[2] = {0};
 
-    do{
-        AutoLock a(&_mut);
-        jhdr = *_frame.hdr(!_iframe);
-    }while(0);
-
+    jhdr = *_frame.hdr(!_iframe);
     jhdr.len = 0;
     jhdr.random = rand();
+    if(_cached)
+    {
+        jhdr.event.predicate|=EVT_KEEP_ALIVE;
+    }
     _enc.encrypt(jhdr.random, jhdr.challange);
+
     CHECK_SEND(&jhdr, sizeof(jhdr) );
+
+    if(_s.receiveall((unsigned char*)rec,1)==1)
+    {
+        by = rec[0]=='1';
+    }
 DONE:
-    ::msleep(256);
+    ::msleep(32);
     return by;
 }
 
@@ -242,59 +239,64 @@ bool webcast::_go_streaming(const char* host, int port)
     if(_s.create(port))
     {
         _s.set_blocking(1);
-        if(_s.try_connect(host, port)){
+        if(_s.try_connect(host, port))
+        {
             ::usleep(0x1FF);
         }
         else{
             TRACE() << "cam cannot connect "<< host << port <<"\r\n";
             goto DONE;
         }
-        if(_s.isopen())
+        if(_s.is_really_connected())
         {
+            _casting = true;
             do{
                 AutoLock a(&_mut);
                 iframe = !_iframe;
+                 by = _sign_in();
             }while(0);
-            by = _sign_in();
-            if(_cached && by && !_cache.empty())
-            {
-                TRACE()<< "sending cache\n";
-                _send_cache(iframe);
-            }
-            while(by>0 && _s.isopen() && __alive && _noframe < MAX_NO_FRM_MS)
+
+
+            while(by>0 && _s.isopen() &&
+                  __alive &&
+                  _noframe < MAX_NO_FRM_MS &&
+                  (ph->event.predicate & EVT_SENDOVER))
             {
                 _send_time = time(0);
                 do{
                     AutoLock a(&_mut);
                     iframe = !_iframe;
-                }while(0);
-
-                IN_SYNC();
-
-                ph = _frame.hdr(iframe);
-                if(ph->len)
-                {
-                    if(ph->event.predicate & EVT_KEEP_ALIVE)
+                    IN_SYNC();
+                    ph = _frame.hdr(iframe);
+                    if(ph->len)
                     {
-                        TRACE()<< "============ Frame torecord: "<<std::hex<<
-                                  int(ph->event.predicate)<<std::dec<<"\n";
+                        if(ph->event.predicate & EVT_KEEP_ALIVE)
+                        {
+                            TRACE()<< "============ Frame torecord: "<<std::hex<<
+                                int(ph->event.predicate)<<std::dec<<"\n";
+                        }
+                        CHECK_SEND(ph, sizeof(LiFrmHdr));
+                        CHECK_SEND(_frame.img(iframe),ph->len);
+                        TRACE()<< "============\n";
+                        _noframe = 0;
                     }
-                    CHECK_SEND(ph, sizeof(LiFrmHdr));
-                    CHECK_SEND(_frame.img(iframe),ph->len);
-                    TRACE()<< "============\n";
-                    _noframe = 0;
-                }
-                else
-                {
-                    _noframe += frm_intl;
-                }
-                ph->len = 0;
-                //                ph->event.movepix = 0;
-                //                ph->event.predicate = 0;
-                _casting = true;
-                _send_time = time(0);
-END_WILE:
+                    else
+                    {
+                        _noframe += frm_intl;
+                    }
+                    ph->len = 0;
+
+                    _send_time = time(0);
+                }while(0);
+            END_WILE:
                 msleep(1+frm_intl);
+                ::msleep(1000);
+            }
+
+            if(by && _cached.load())
+            {
+                TRACE()<< "sending cache \n";
+                _send_cache(iframe);
             }
         }
     }
@@ -308,8 +310,9 @@ DONE:
 void webcast::_send_cache(int iframe)
 {
     int         by;
+    bool        fail=true;
     AutoLock    a(&_mut);
-    if(::access(_cache.c_str(),0)==0 && _cached)
+    if(::access(_cache.c_str(),0)==0)
     {
         LiFrmHdr  hdr;
         FILE* pf = ::fopen(_cache.c_str(),"rb");
@@ -324,12 +327,13 @@ void webcast::_send_cache(int iframe)
                     if(hdr.len==(uint32_t)sz)
                     {
                         TRACE()<< "-->sending cached frame: "<< hdr.index << ", len:" <<
-                                  hdr.len <<
-                                  " movepix:" << hdr.event.movepix <<
-                                  " predicate:"
-                               << std::hex << int(hdr.event.predicate) << std::dec << "\n";
-
+                            hdr.len <<
+                            " movepix:" << hdr.event.movepix <<
+                            " predicate:"
+                                << std::hex << int(hdr.event.predicate) << std::dec << "\n";
+                        fail  = true;
                         CHECK_SEND(_frame.img(iframe), hdr.len);
+                        fail  = false;
                     }
                     else
                     {
@@ -341,11 +345,15 @@ void webcast::_send_cache(int iframe)
             if(::feof(pf)){ break; }
             ::msleep(32);
         }
-DONE:
+    DONE:
         ::fclose(pf); ::msleep(1);
-        ::fopen(_cache.c_str(),"w");
-        ::msleep(1); ::fclose(pf);
-        _cached = 0;
+        if(fail==false)
+        {
+            TRACE() << "failed to send cached \n";
+            ::fopen(_cache.c_str(),"w");
+            ::msleep(1); ::fclose(pf);
+            _cached = 0;
+        }
     }
 }
 

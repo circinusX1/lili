@@ -9,7 +9,6 @@
 
 Pool::~Pool()
 {
-
     closeall();
     signal_to_stop();
 }
@@ -294,6 +293,7 @@ bool Pool::_fdCheck(fd_set& fdr,fd_set& fdw,fd_set& fdx,int ndfs)
         }
         if(FD_ISSET(a.second->_cam->socket(),&fdr))
         {
+            GLOGD("fd for reading");
             try{
                 a.second->_cam->transfer(a.second->_clis);
                 if(SECS()-nowt>CHECK_CLIENTS_TOUT)

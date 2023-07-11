@@ -2,7 +2,7 @@ QT -= gui
 QT -= core
 #QMAKE_LFLAGS += -no-pie
 
-CONFIG += c++14 console
+CONFIG += c++17 console
 CONFIG -= app_bundle
 DEFINES += cimg_use_jpeg
 DEFINES += cimg_display=0
@@ -47,8 +47,7 @@ DISTFILES += \
     ../../../../var/www/html/stream2.php \
     ../../../../var/www/html/upload.php \
     ../CMakeLists.txt \
-    ../liveimage.konf \
-    ../liveimage.sample_konf
+    ../liveimage.konf
 
 HEADERS += \
     ../CImg.h \

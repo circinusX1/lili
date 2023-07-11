@@ -358,7 +358,7 @@ private:
 
                 for(const auto f : _line)
                 {
-                    if(f=='#'){ _line.empty(); break; }
+                    if(f=='#'){ _line.clear(); break; }
                     switch(f)
                     {
                     case '\t':

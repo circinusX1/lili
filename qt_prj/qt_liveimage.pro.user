@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.2, 2022-07-24T13:18:05. -->
+<!-- Written by QtCreator 10.0.2, 2023-07-11T18:35:40. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -54,6 +54,7 @@
    <value type="QString" key="EditorConfiguration.ignoreFileTypes">*.md, *.MD, Makefile</value>
    <value type="bool" key="EditorConfiguration.inEntireDocument">true</value>
    <value type="bool" key="EditorConfiguration.skipTrailingWhitespace">true</value>
+   <value type="bool" key="EditorConfiguration.tintMarginArea">true</value>
   </valuemap>
  </data>
  <data>
@@ -237,15 +238,15 @@
     <valuelist type="QVariantList" key="CustomOutputParsers"/>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/sdaone/GIT_HUB/lili/qt_prj/qt_liveimage.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/sdaone/GIT_HUB/lili/qt_prj/qt_liveimage.pro</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">qt_liveimage2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/sdaone/GIT_HUB/lili_git/qt_prj/qt_liveimage.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/sdaone/GIT_HUB/lili_git/qt_prj/qt_liveimage.pro</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
-    <value type="bool" key="RunConfiguration.UseTerminal">true</value>
-    <value type="QString" key="RunConfiguration.WorkingDirectory">/sdaone/GIT_HUB/lili</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory">/sdaone/GIT_HUB/lili_git</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory.default">/sdaone/GIT_HUB/lili/build-qt_liveimage-LINUX_DEFAULT-Debug</value>
    </valuemap>
    <value type="qlonglong" key="ProjectExplorer.Target.RunConfigurationCount">1</value>

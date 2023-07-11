@@ -215,9 +215,14 @@ bool    TcpSrv::_on_cam()
             }while(0);
             if(pENC->decrypt(hdr.challange) != hdr.random)
             {
-                GLOGW("Cannot invalid security rec_off 2");
+                GLOGW("Cannot use, invalid security rec_off 2");
+                s.sendall("0",1);
+                ::msleep(100);
                 throw RawSock::CAM;
             }
+            s.sendall("1",1);
+            ::msleep(100);
+
             TcpCamCli* cp = _p.has(hdr.camname);
             if(cp)
             {
