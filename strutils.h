@@ -36,8 +36,8 @@ inline int nothing(int c){return c;} //for callback
 
 inline char* str_up2chr(char* p, char peos, int& len, pFNic tou=0)
 {
-    char* pp = p;
-    char eos = peos;
+    register char* pp = p;
+    register char eos = peos;
 
     while(*p && *p!=eos)
     {
@@ -120,9 +120,9 @@ inline kchar* str_deleol(char* p)
 
 inline kchar* str_up2str(char** p, kchar* pss)
 {
-    char* pp = *p;
-    kchar* ss = pss;
-    char* ps = _ttstrstr(pp, ss);
+    register char* pp = *p;
+    register kchar* ss = pss;
+    register char* ps = _ttstrstr(pp, ss);
     if(ps!=0)
     {
         *ps = 0;
@@ -259,7 +259,7 @@ inline char* str_scpy(char* d, char* s, kchar* occ)
 //strutils.h
 inline void  str_trimall(char* p, char c)
 {
-    char *d=p;
+    register char *d=p;
     while(*p)
     {
         if(*p!=c)

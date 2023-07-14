@@ -84,7 +84,7 @@ int main(int nargs, char* vargs[])
     pCFG = new Cbdler();
     try{
         pCFG->parse("./liveimage.konf");
-        TRACE()<< "starting \n";
+	TRACE()<< "starting \n";
         kapture();
     }catch(int line)
     {
@@ -121,7 +121,7 @@ void kapture()
         }
         else{
             TRACE()<<"server started on " << local_server_port << "\n";
-        }
+    }
     }
     encode.init(img_size);
 
@@ -208,11 +208,11 @@ void kapture()
                 if(p->peer())
                 {
                     p->peer()->stream(image._jpgp,
-                                      image._jpgl,
-                                      img_size,
-                                      p->name(),
-                                      loopevent,
-                                      image._jpgf,image._now);
+                                        image._jpgl,
+                                        img_size,
+                                        p->name(),
+                                        loopevent,
+                                        image._jpgf,image._now);
                 }
                 if(pserver && pserver->has_clients(p->name()))
                 {

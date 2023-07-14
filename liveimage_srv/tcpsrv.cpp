@@ -194,10 +194,11 @@ bool    TcpSrv::_on_cam()
     {
         msleep(1);
         try{
+            s.set_blocking(1);
             int bytes = s.receive((uint8_t*)&hdr, sizeof(hdr)); //header string
             if(bytes != sizeof(hdr))
             {
-                GLOGW("Cannot invalid header rec_off 2");
+                GLOGW("Cannot invalid header");
                 throw RawSock::CAM;
             }
             do{ // if a http comes on camera port
@@ -215,14 +216,9 @@ bool    TcpSrv::_on_cam()
             }while(0);
             if(pENC->decrypt(hdr.challange) != hdr.random)
             {
-                GLOGW("Cannot use, invalid security rec_off 2");
-                s.sendall("0",1);
-                ::msleep(100);
+                GLOGW("invalid security");
                 throw RawSock::CAM;
             }
-            s.sendall("1",1);
-            ::msleep(100);
-
             TcpCamCli* cp = _p.has(hdr.camname);
             if(cp)
             {
@@ -291,6 +287,7 @@ bool    TcpSrv::_on_cli()
 
     if(_cli.accept(s)>0)
     {
+        s.set_blocking(1);
         try{
 
             Request             req;

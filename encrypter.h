@@ -22,8 +22,6 @@ public:
     }
     void encrypt(unsigned int val, uint8_t* out)
     {
-        if(_key.empty())
-            return;
         char text[32];
         sprintf(text,"%u",val);
         out[0]=0;
