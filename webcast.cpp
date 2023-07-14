@@ -91,7 +91,8 @@ bool webcast::stream(const uint8_t* pb,
         {
             if(!_cache.empty())
             {
-                if(now-_last_frame > _cacheintl)
+                if(now-_last_frame > _cacheintl &&
+                   _cached < _maxcache)
                 {
                     _last_frame = now;
                     _cache_frame(_iframe);

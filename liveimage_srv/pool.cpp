@@ -9,7 +9,6 @@
 
 Pool::~Pool()
 {
-
     closeall();
     signal_to_stop();
 }
