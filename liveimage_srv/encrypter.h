@@ -43,10 +43,15 @@ public:
             return 0;
         }
 
+        std::cout << "key " << _key << ", text: " << text << "\r\n";
+
         for(int i=0; i<len; i++)
         {
             loco[i] = pc[i] - _key[i%_key.length()];
         }
+        
+        std::cout << "decryped = " << atoi((const char*)loco) << "\r\n";
+
         return ::atoi((const char*)loco);
     }
 
