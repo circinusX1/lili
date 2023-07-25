@@ -92,7 +92,7 @@ bool webcast::stream(const uint8_t* pb,
             if(!_cache.empty())
             {
                 if(now-_last_frame > _cacheintl &&
-                   _cached < _maxcache)
+                    _cached < _maxcache)
                 {
                     _last_frame = now;
                     _cache_frame(_iframe);
@@ -179,31 +179,19 @@ void webcast::kill()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-#define CHECK_SEND(data_, dlen_)                             \
-by=_s.sendall((const uint8_t*)data_, (int)dlen_);        \
-    if(by!=(int)dlen_){                                      \
-        TRACE() << "Socket Error "<< dlen_ <<" bytes != "<< by <<"sent , errno:"<< errno <<"\n"; \
-        goto DONE;                                           \
+bool webcast::_send_all_buffer(const uint8_t* data_,size_t dlen_)
+{
+    int by=_s.sendall((const uint8_t*)data_, (int)dlen_);
+    if(by!=(int)dlen_)
+    {
+        TRACE() << "Socket Error "<< dlen_ <<" bytes != "<< by <<
+            "sent , errno:"<< errno <<"\n";
+        return false;
+    }
+    return true;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
-///
-//////////////////////////////////////////////////////////////////////////////////////////////////
-#define IN_SYNC()    if(_frame.hdr(iframe)->insync)                 \
-{         \
-        needsframe = false;         \
-        TRACE() << "WAITING \r\n" ;         \
-        by = _s.receiveall((uint8_t*)&hcopy, sizeof(hcopy));         \
-        if(by != sizeof(hcopy)){         \
-            TRACE() << "REC ERROR " << by <<", "<< _s.error() << "\n";         \
-            goto DONE;         \
-    }         \
-        if(hcopy.len==0){         \
-            needsframe=true;         \
-    }         \
-        if(needsframe==false){         \
-            goto END_WILE;         \
-    }         \
-}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -214,10 +202,13 @@ int webcast::_sign_in(const LiFrmHdr& hdr)
 
     hcopy.len = 0;
     hcopy.random = rand();
+
     _enc.encrypt(hcopy.random, hcopy.challange);
-    CHECK_SEND(&hcopy, sizeof(hcopy) );
-DONE:
-    ::msleep(256);
+    int val = _enc.decrypt(hcopy.challange);
+    assert(val == hcopy.random);
+
+    by = _send_all_buffer((uint8_t*)&hcopy, sizeof(hcopy) );
+    ::msleep(32);
     return by;
 }
 
@@ -247,10 +238,8 @@ bool webcast::_go_streaming(const char* host, int port)
 {
     int             by = 1;
     int             frm_intl = 1000 / (1+_cast_fps);
-    bool            needsframe = false;
     int             iframe;
     LiFrmHdr*       ph = nullptr;
-    LiFrmHdr        hcopy;
 
     _noframe = 0;
     _s.destroy();
@@ -282,12 +271,15 @@ bool webcast::_go_streaming(const char* host, int port)
                     AutoLock a(&_mut);
 
                     iframe = !_iframe;
-                    IN_SYNC();
+
                     ph = _frame.hdr(iframe);
                     if(ph->len)
                     {
                         by = _send_buf_do(ph, _frame.img(iframe), ph->len);
-                        CHECK_SEND(_send_buf, by);
+                        if(false == _send_all_buffer(_send_buf, by))
+                        {
+                            goto DONE;
+                        }
                         TRACE()<< "frame sent\n";
                         _noframe = 0;
                     }
@@ -298,7 +290,6 @@ bool webcast::_go_streaming(const char* host, int port)
                     ph->len = 0;
                     _send_time = time(0);
                 }while(0);
-            END_WILE:
                 msleep(1+frm_intl);
             }
         }
@@ -359,7 +350,10 @@ void webcast::_send_cache(const char* host, int port)
                                             << std::hex << int(hdr.event.predicate)
                                             << std::dec << "\n";
                                     by = _send_buf_do(&hdr, _frame.img(0), hdr.len);
-                                    CHECK_SEND(_send_buf, by);
+                                    if(false == _send_all_buffer(_send_buf, by))
+                                    {
+                                        goto DONE;
+                                    }
                                     _cached--;
                                 }
                                 else

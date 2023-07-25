@@ -490,6 +490,8 @@ void Pool::_add_cam(RawSock* pcs)
     }
     AutoLock a(&_m);
 
+    GLOGI("ADDINF KEEP CAM " << pcs->name());
+
     _pool[pcs->name()] = p;
     size_t seq = _seqs[pcs->name()];
     GLOGD(" reindexing file saving at " << seq);
@@ -540,6 +542,7 @@ void Pool::record_cli(const std::string& camname)
 void Pool::record_cam(const std::string& camname)
 {
     time_t now = SECS();
+    GLOGI("RECORD CAM = " << camname);
     _times[camname].cam = now;
 }
 
@@ -580,7 +583,7 @@ AGAIN:
         const Times& pt = a.second;
         if(now - pt.cam > KILL_TIME)
         {
-            GLOGI("ERASING  CAM CLI WAITIME" << a.first << "," << now);
+            GLOGI("ERASING  CAM CLI WAITIME " << a.first << "," << now);
             _times.erase(a.first);
             goto AGAIN;
         }

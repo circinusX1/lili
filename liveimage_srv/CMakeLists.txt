@@ -5,7 +5,7 @@ PROJECT(liveimage_srv)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Wall -fpermissive -fstack-protector-all -g -O0")
-add_definitions(-Dcimg_display=0 -Dcimg_use_jpeg  -Dcimg_display=0)
+add_definitions(-Dcimg_display=0 -Dcimg_use_jpeg  -Dcimg_display=0 -DDEBUG)
 #add_definitions( -DDEBUG )
 add_executable (liveimage_srv cliqueue.cpp
 logger.cpp

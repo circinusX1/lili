@@ -217,9 +217,8 @@ bool    TcpSrv::_on_cam()
 
             if(pENC->decrypt(hdr.challange) != hdr.random)
             {
-
                 GLOGW("invalid security: random=..." << hdr.random );
-//                throw RawSock::CAM;
+                throw RawSock::CAM;
             }
 
             TcpCamCli* cp = _p.has(hdr.camname);

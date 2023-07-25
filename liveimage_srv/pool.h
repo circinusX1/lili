@@ -10,7 +10,7 @@
 #include "os.h"
 
 #ifdef DEBUG
-#define KILL_TIME           25
+#define KILL_TIME           40
 #else
 #define KILL_TIME           25
 #endif
