@@ -48,6 +48,7 @@ DISTFILES += \
     ../../../../var/www/html/upload.php \
     ../CMakeLists.txt \
     ../liveimage.konf \
+    ../liveimage.konf \
     ../liveimage.sample_konf
 
 HEADERS += \

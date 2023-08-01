@@ -74,12 +74,8 @@ int main(int nargs, char* vargs[])
     signal(SIGABRT, ControlC);
     signal(SIGKILL, ControlC);
     signal(SIGUSR2, Capture);
+    signal(SIGPIPE, SIG_IGN);
 
-    sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask,SIGINT);
-    sigaddset(&mask,SIGPIPE);
-    pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
 
     pCFG = new Cbdler();
     try{

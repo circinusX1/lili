@@ -62,7 +62,7 @@ bool webcast::stream(const uint8_t* pb,
                      EIMG_FMT eift, time_t now)
 {
     if(len){
-        
+
 	if(1)
 	{
 		AutoLock a(&_mut);
@@ -141,6 +141,9 @@ void webcast::thread_main()
     char            path[64];
     char            url[256];
     int             hasevents;
+
+    signal(SIGPIPE, SIG_IGN);
+
 
     ::strcpy(url, CFG["webcast"]["server"].value().c_str());
     parse_url(url, scheme,
@@ -267,7 +270,7 @@ bool webcast::_go_streaming(const char* host, int port)
         {
             do{
                 AutoLock a(&_mut);
-                _casting = true;
+
                 iframe = !_iframe;
                 ph = _frame.hdr(iframe);
                 by = _sign_in(*ph);
@@ -282,17 +285,19 @@ bool webcast::_go_streaming(const char* host, int port)
                     iframe = !_iframe;
 	        }while(0);
 
-                    IN_SYNC();
+                    //IN_SYNC();
                     ph = _frame.hdr(iframe);
                     if(ph->len)
                     {
                         by = _send_buf_do(ph, _frame.img(iframe), ph->len);
-                        TRACE()<< "frame sent " <<  by << " bytes \n";
+
                         if(false == _send_all_buffer(_send_buf, by))
                         {
+                            TRACE()<< "frame !sent \n";
                             goto DONE;
                         }
-                        TRACE()<< "frame sent\n";
+                        TRACE()<< "frame sent " <<  by << " bytes \n";
+                        _casting = true;
                         _noframe = 0;
                     }
                     else
@@ -301,7 +306,6 @@ bool webcast::_go_streaming(const char* host, int port)
                     }
                     ph->len = 0;
                     _send_time = time(0);
-            END_WILE:
                 msleep(1+frm_intl);
             }
         }
@@ -324,7 +328,6 @@ void webcast::_send_cache(const char* host, int port)
     if(::access(_cache.c_str(),0)==0)
     {
         LiFrmHdr  hdr;
-	int frames = 0;
         FILE* pf = ::fopen(_cache.c_str(),"rb");
         if(pf)
         {
