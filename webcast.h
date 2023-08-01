@@ -35,7 +35,8 @@ private:
     int  _sign_in(const LiFrmHdr& hdr);
     void _send_cache(const char* host, int port);
     size_t _send_buf_do(LiFrmHdr* ph, const uint8_t* img,  size_t len);
-
+    void _set_cached();
+    void _get_cached();
 private:
     uint8_t         *_send_buf=nullptr;
     size_t          _lastlen = 0;
