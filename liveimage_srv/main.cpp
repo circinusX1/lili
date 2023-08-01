@@ -130,7 +130,10 @@ int main(int argc,char *argv[])
     tm.bind(&p);
     GLOGI(strweb_time());
     Sigs();
+#ifndef DEBUG
     Wdog.start_thread();
+#endif
+
     p.start_thread();
     l.spin(camport,cliport,loop_callback);
     p.stop_thread();

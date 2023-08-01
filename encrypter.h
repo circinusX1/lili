@@ -30,6 +30,7 @@ public:
             out[i+1] += text[i]+_key[i%_key.length()];
             out[0]++;
         }
+        TRACE() << "key:" << _key << " enc:" << out+1 << "\r\n";
     }
 
     unsigned int  decrypt(const uint8_t* text)

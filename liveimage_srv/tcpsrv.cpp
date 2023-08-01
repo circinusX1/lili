@@ -214,11 +214,13 @@ bool    TcpSrv::_on_cam()
                     throw RawSock::CAM;
                 }
             }while(0);
+
             if(pENC->decrypt(hdr.challange) != hdr.random)
             {
-                GLOGW("invalid security");
+                GLOGW("invalid security: random=..." << hdr.random );
                 throw RawSock::CAM;
             }
+
             TcpCamCli* cp = _p.has(hdr.camname);
             if(cp)
             {
