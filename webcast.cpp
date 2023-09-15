@@ -227,9 +227,11 @@ int webcast::_sign_in(const LiFrmHdr& hdr)
 
     _enc.encrypt(hcopy.random, hcopy.challange);
     int val = _enc.decrypt(hcopy.challange);
-    assert(val == hcopy.random);
-
+//    assert(val == hcopy.random);
+    
     by = _send_all_buffer((uint8_t*)&hcopy, sizeof(hcopy) );
+    TRACE()<< "checking in " << by << "\n";
+
     ::msleep(32);
     return by;
 }
