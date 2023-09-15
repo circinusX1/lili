@@ -1,5 +1,10 @@
 
 #include <unistd.h>
+#include <dirent.h>
+#include <map>
+#include <string>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "webcast.h"
 #include "cbconf.h"
 #include "sockserver.h"
@@ -13,6 +18,8 @@
 #define WE_TRIED_TO_SEND_CACHE 2
 extern bool __alive;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+typedef std::multimap<time_t, std::string> result_set_t;
 // EVT_KEEP_ALIVE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,17 +33,20 @@ webcast::webcast(const std::string& name):imgsink(name)
     _maxcache    = CFG["webcast"]["cache"].to_int(1);
     _cacheintl    = CFG["webcast"]["cache"].to_int(2);
 
-    if(!_cache.empty())  {
+    if(!_cache.empty())
+    {
         if(_cache.back()!='/')
             _cache+="/";
+
+        _cachedir = _cache;
         std::string sys = "mkdir -p ";
         sys+=_cache;
         ::system(sys.c_str());
-        _cache += name; _cache += ".cache";
-	if(::access(_cache.c_str(),0)==0)
-	{
-		_cached = _maxcache;
-	}
+        _cache += name;
+        if(::access(_cache.c_str(),0)==0)
+        {
+            _cached = _maxcache;
+        }
     }
 
     if(_pool_intl<6)_pool_intl=10;
@@ -63,24 +73,24 @@ bool webcast::stream(const uint8_t* pb,
 {
     if(len){
 
-	if(1)
-	{
-		AutoLock a(&_mut);
+        if(1)
+        {
+            AutoLock a(&_mut);
 
-	        _frame.copy(pb, len, _iframe);
+            _frame.copy(pb, len, _iframe);
 
-	        LiFrmHdr* ph = _frame.hdr(_iframe);
-        	ph->index    = _frmidx++;
-	        ph->wh[0]    = imgsz.x;
-	        ph->wh[1]    = imgsz.y;
-        	ph->len      = len;
-	        ph->event    = event;
-        	ph->format   = eift;
-	        ph->magic    = _magic;
-        	ph->insync   = _insync;
-	        _noframe     = 0;
-        	::strncpy(ph->camname,name.c_str(),sizeof(LiFrmHdr::camname));
-	}
+            LiFrmHdr* ph = _frame.hdr(_iframe);
+            ph->index    = _frmidx++;
+            ph->wh[0]    = imgsz.x;
+            ph->wh[1]    = imgsz.y;
+            ph->len      = len;
+            ph->event    = event;
+            ph->format   = eift;
+            ph->magic    = _magic;
+            ph->insync   = _insync;
+            _noframe     = 0;
+            ::strncpy(ph->camname,name.c_str(),sizeof(LiFrmHdr::camname));
+        }
 
         if(_hasevents == 0)
         {
@@ -99,8 +109,8 @@ bool webcast::stream(const uint8_t* pb,
                 if(now-_last_frame > _cacheintl &&
                     _cached < _maxcache)
                 {
-	  	     AutoLock a(&_mut);
-		    _last_frame = now;
+                    AutoLock a(&_mut);
+                    _last_frame = now;
                     _cache_frame(_iframe);
                 }
             }
@@ -117,13 +127,17 @@ void webcast::_cache_frame(int iframe)
     if(ph->event.predicate & EVT_KEEP_ALIVE)
     {
         TRACE()<< "caching frame [][][]"<< ph->index <<"\n";
+        std::string nfn = _cache;
 
-        FILE* pf = ::fopen(_cache.c_str(),"ab");
-        if(pf==nullptr)
-            pf = ::fopen(_cache.c_str(),"wb");
-        if(pf){
+        nfn += ".cac-";
+        nfn += std::to_string(_frmcnt++);
+
+        FILE* pf = ::fopen("/tmp/cac","wb");
+        if(pf)
+        {
             ::fwrite(_frame.buff(iframe),1,_frame.frm_len(iframe),pf);
             ::fclose(pf);
+            ::rename("/tmp/cac", nfn.c_str());
             ++_cached;
         }
         _last_cache_time = time(0);
@@ -169,14 +183,10 @@ void webcast::thread_main()
             TRACE()<< "Done streaming ----- \n";
             _ctime = time(0);
             _send_time = _ctime;
-            if(::access(_cache.c_str(),0) == 0 )
-            {
-		_get_cached();
-                TRACE()<< "     Go caching \n";
-                _send_cache(host, port);
-                TRACE()<< "     Done caching \n";
-	        _set_cached();
-            }
+
+            TRACE()<< "     Go caching \n";
+            _send_cache(host, port);
+            TRACE()<< "     Done caching \n";
         }
         if(!hasevents){
             ::msleep(MAX_NO_FRM_MS);
@@ -283,29 +293,29 @@ bool webcast::_go_streaming(const char* host, int port)
                     AutoLock a(&_mut);
 
                     iframe = !_iframe;
-	        }while(0);
+                }while(0);
 
-                    //IN_SYNC();
-                    ph = _frame.hdr(iframe);
-                    if(ph->len)
-                    {
-                        by = _send_buf_do(ph, _frame.img(iframe), ph->len);
+                //IN_SYNC();
+                ph = _frame.hdr(iframe);
+                if(ph->len)
+                {
+                    by = _send_buf_do(ph, _frame.img(iframe), ph->len);
 
-                        if(false == _send_all_buffer(_send_buf, by))
-                        {
-                            TRACE()<< "frame !sent \n";
-                            goto DONE;
-                        }
-                        TRACE()<< "frame sent " <<  by << " bytes \n";
-                        _casting = true;
-                        _noframe = 0;
-                    }
-                    else
+                    if(false == _send_all_buffer(_send_buf, by))
                     {
-                        _noframe += frm_intl;
+                        TRACE()<< "frame !sent \n";
+                        goto DONE;
                     }
-                    ph->len = 0;
-                    _send_time = time(0);
+                    TRACE()<< "frame sent " <<  by << " bytes \n";
+                    _casting = true;
+                    _noframe = 0;
+                }
+                else
+                {
+                    _noframe += frm_intl;
+                }
+                ph->len = 0;
+                _send_time = time(0);
                 msleep(1+frm_intl);
             }
         }
@@ -321,83 +331,83 @@ DONE:
 
 void webcast::_send_cache(const char* host, int port)
 {
-    int         by;
+    int       by = 0;
+    AutoLock  a(&_mut);
+    DIR*      dp = ::opendir(_cachedir.c_str());
+    LiFrmHdr  hdr;
+    result_set_t             result_set;
+    struct    dirent*           entry;
+    struct {
+        time_t dir_time(const char* fld) {
+            struct stat t_stat;
+            if (stat(fld, &t_stat) != 0)
+                return 0;
+            return t_stat.st_ctim.tv_sec*1000000000 + t_stat.st_ctim.tv_nsec;
+        }
+    } _l;
 
-    AutoLock    a(&_mut);
-
-    if(::access(_cache.c_str(),0)==0)
+    while ((entry = readdir(dp)) != nullptr)
     {
-        LiFrmHdr  hdr;
-        FILE* pf = ::fopen(_cache.c_str(),"rb");
-        if(pf)
+        if (entry->d_name[0]=='.') continue;
+        if (!::strstr(entry->d_name,"cac-")) continue;
+        std::string fp = _cachedir + entry->d_name;
+        time_t dt = _l.dir_time(fp.c_str());
+        if (dt)
         {
-            if(_s.create(port))
+            std::pair<time_t, std::string> p(dt, std::string(entry->d_name));
+            result_set.insert(p);
+        }
+    }
+
+    if(result_set.size() && _s.create(port))
+    {
+        _s.set_blocking(1);
+        if(_s.try_connect(host, port))
+        {
+            ::usleep(0x1FF);
+        }
+        else
+        {
+            TRACE() << "cam cannot connect "<< host << port <<"\r\n";
+        }
+        if(_s.isopen())
+        {
+            result_set_t::iterator it = result_set.begin();
+            for( ; it != result_set.end(); it++)
             {
-                _s.set_blocking(1);
-                if(_s.try_connect(host, port)){
-                    ::usleep(0x1FF);
-                }
-                else{
-                    TRACE() << "cam cannot connect "<< host << port <<"\r\n";
-                    goto DONE;
-                }
-                if(_s.isopen())
+                std::string  ffn = _cachedir + it->second;
+                FILE* pf = ::fopen(ffn.c_str(),"rb");
+
+                if(pf)
                 {
                     int once=false;
-                    while(!::feof(pf))
+
+                    if(::fread(&hdr, 1, sizeof(hdr), pf))
                     {
-                        if(::fread(&hdr, 1, sizeof(hdr), pf))
+                        int sz = ::fread(_frame.img(0), 1, hdr.len, pf);
+                        if(hdr.len==(uint32_t)sz)
                         {
-
-                            if(hdr.event.predicate & EVT_KEEP_ALIVE)
+                            if(once==false)
                             {
-                                int sz = ::fread(_frame.img(0), 1, hdr.len, pf);
-                                if(hdr.len==(uint32_t)sz)
-                                {
-                                    if(once==false)
-                                    {
-                                        _sign_in(hdr);
-                                        once=true;
-                                    }
-
-                                    TRACE()<< "-->sending cached frame: "<< hdr.index << ", len:" <<
-                                        hdr.len <<
-                                        " movepix:" << hdr.event.movepix <<
-                                        " predicate:"
-                                            << std::hex << int(hdr.event.predicate)
-                                            << std::dec << "\n";
-                                    by = _send_buf_do(&hdr, _frame.img(0), hdr.len);
-                                    if(false == _send_all_buffer(_send_buf, by))
-                                    {
-                                        goto DONE;
-                                    }
-                                    _cached--;
-                                }
-                                else
-                                {
-                                    TRACE()<< "-->header in cached file is invalid\n";
-                                    _cached = 0;
-                                    goto DONE;
-                                }
+                                _sign_in(hdr);
+                                once = true;
                             }
-                        }
-                        if(::feof(pf))
-                        {
-                            _cached=0;
-                            break;
+                            TRACE()<< "-->sending cached frame: "<< hdr.index << ", len:" <<
+                                hdr.len <<
+                                " movepix:" << hdr.event.movepix <<
+                                " predicate:"
+                                    << std::hex << int(hdr.event.predicate)
+                                    << std::dec << "\n";
+                            by = _send_buf_do(&hdr, _frame.img(0), hdr.len);
+                            _send_all_buffer(_send_buf, by);
                         }
                     }
-                    _s.destroy();
+                    ::fclose(pf);
+                    ::unlink(ffn.c_str());
                 }
-            DONE:
-                ::fclose(pf);
-            }
-            if(_cached==0)
-            {
-		TRACE() << "removing cache file \n";
-                ::unlink(_cache.c_str());
             }
         }
+        _s.destroy();
     }
 }
 
@@ -413,22 +423,24 @@ bool webcast::init(const dims_t&)
 
 void webcast::_get_cached()
 {
-	FILE* pf = fopen ("/tmp/lilicached","rb");
-	if(pf){
-		::fread(&_cached,sizeof(_cached),1,pf);
-		::fclose(pf);
-		TRACE() << "getting cache" <<  _cached << "\n";
-	}
+    FILE* pf = fopen ("/tmp/lilicached","rb");
+    if(pf){
+        int cached = 0;
+        ::fread(&cached,sizeof(_cached),1,pf);
+        ::fclose(pf);
+        _cached += cached;
+        TRACE() << "getting cache" <<  _cached << "\n";
+    }
 }
 
 void webcast::_set_cached()
 {
-	FILE* pf = fopen ("/tmp/lilicached","wb");
-	if(pf){
-		TRACE() << "saving cache" <<  _cached << "\n";
-		::fwrite(&_cached,sizeof(_cached),1,pf);
-		::fclose(pf);
-	}
+    FILE* pf = fopen ("/tmp/lilicached","wb");
+    if(pf){
+        TRACE() << "saving cache" <<  _cached << "\n";
+        ::fwrite(&_cached,sizeof(_cached),1,pf);
+        ::fclose(pf);
+    }
 }
 
 

@@ -40,7 +40,8 @@ private:
     bool _send_all_buffer(const uint8_t* data_,size_t dlen_);
 
 private:
-    uint8_t         *_send_buf=nullptr;
+    uint8_t         *_send_buf = nullptr;
+    size_t          _frmcnt=0;
     size_t          _lastlen = 0;
     mutexx          _mut;
     WebDblFrame     _frame;
@@ -58,6 +59,7 @@ private:
     bool            _casting = false;
     int             _hasevents = 0;
     std::string     _cache;
+    std::string     _cachedir;
     int             _maxcache;
     int             _cacheintl=1000;
     int             _cached = 0;
