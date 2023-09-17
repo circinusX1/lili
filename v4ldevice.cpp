@@ -26,7 +26,7 @@
 #include "cbconf.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-#define VIDEO_BUFFS MAX_BUFFERS
+#define VIDEO_BUFFS 4
 #define MOTION_SZ   64
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -346,6 +346,7 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
     }
 
     struct v4l2_buffer buf; // = {0};
+    buf.index = _curbuffer;
     buf.type =  V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = _buffers[_curbuffer].mmap;
     if(-1==_ioctl(VIDIOC_DQBUF, &buf))
@@ -360,7 +361,7 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
             return 0;
         }
     }
-
+    _curbuffer = buf.index;
     if(_buffers[_curbuffer].mmap == V4L2_MEMORY_USERPTR)
     {
         for (int i = 0; i < VIDEO_BUFFS; ++i)
@@ -373,15 +374,17 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
         }
     }
 
-    int user = _curbuffer==0 ? user==VIDEO_BUFFS-1 : _curbuffer-1;
+    int user = _curbuffer==0 ? VIDEO_BUFFS-1  : _curbuffer-1;
 
-    sz = _buffers[user].length;
+
     if (-1 == _ioctl(VIDIOC_QBUF, &buf))
     {
         sz = 0;
         return 0;
     }
-    if(sz){
+    sz = _buffers[user].length;
+    if(sz)
+    {
       std::cout << "cur=" << _curbuffer << " vs " << user << "\n";
       return (const uint8_t*)_buffers[user].start;
     }
