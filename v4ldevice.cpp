@@ -360,6 +360,7 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
             return 0;
         }
     }
+
     if(_buffers[_curbuffer].mmap == V4L2_MEMORY_USERPTR)
     {
         for (int i = 0; i < VIDEO_BUFFS; ++i)
@@ -371,17 +372,20 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
             }
         }
     }
-    _curbuffer = buf.index;
-    _curts  = buf.timestamp;
-    int ibuf = (_curbuffer+1)%MAX_BUFFERS;
-    sz = _buffers[ibuf].length;
 
+    int user = _curbuffer==0 ? user==VIDEO_BUFFS-1 : _curbuffer-1;
+
+    sz = _buffers[user].length;
     if (-1 == _ioctl(VIDIOC_QBUF, &buf))
     {
         sz = 0;
         return 0;
     }
-    return (const uint8_t*)_buffers[_curbuffer].start;
+    if(sz){
+      std::cout << "cur=" << _curbuffer << " vs " << user << "\n";
+      return (const uint8_t*)_buffers[user].start;
+    }
+    return 0;
 }
 
 void v4ldevice::unread()
