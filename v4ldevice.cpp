@@ -26,7 +26,7 @@
 #include "cbconf.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-#define VIDEO_BUFFS 2
+#define VIDEO_BUFFS MAX_BUFFERS
 #define MOTION_SZ   64
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,22 +373,23 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
     }
     _curbuffer = buf.index;
     _curts  = buf.timestamp;
-    sz = _buffers[_curbuffer].length;
+    int ibuf = (_curbuffer+1)%MAX_BUFFERS;
+    sz = _buffers[ibuf].length;
 
- //   if (-1 == _ioctl(VIDIOC_QBUF, &buf))
- //   {
- //       sz = 0;
- //       return 0;
- //   }
+    if (-1 == _ioctl(VIDIOC_QBUF, &buf))
+    {
+        sz = 0;
+        return 0;
+    }
     return (const uint8_t*)_buffers[_curbuffer].start;
 }
 
 void v4ldevice::unread()
 {
-    struct v4l2_buffer buf; // = {0};
-    buf.type =  V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = _buffers[_curbuffer].mmap;
-    _ioctl(VIDIOC_QBUF, &buf);
+  // struct v4l2_buffer buf; // = {0};
+  // buf.type =  V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  // buf.memory = _buffers[_curbuffer].mmap;
+  // _ioctl(VIDIOC_QBUF, &buf);
 }
 
 

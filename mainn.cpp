@@ -238,10 +238,11 @@ void kapture()
                         }
                     }
                 }
-	        p->let_frame();
+
                 p->clean_events();
                 image._jpgl = 0;
             }
+            p->let_frame();
         }
 
         ::usleep(16000);
