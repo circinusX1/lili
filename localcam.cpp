@@ -38,6 +38,13 @@ bool  localcam::init(const dims_t& t)
     return false;
 }
 
+void localcam::let_frame()
+{
+    _dev->unread();
+
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 size_t localcam::get_frame(imglayout_t& i)
 {

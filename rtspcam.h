@@ -18,6 +18,7 @@ public:
     virtual ~rtspcam();
     virtual void  thread_main();
     virtual size_t get_frame(imglayout_t& i);
+    virtual void let_frame(){};
     virtual bool spin();
     virtual bool init(const dims_t&);
 

@@ -50,6 +50,7 @@ public:
 
     virtual bool init(const dims_t&)=0;
     virtual size_t get_frame(imglayout_t& i)=0;
+    virtual void let_frame()=0;
     virtual bool spin()=0;
     const std::string& name()const { return _name; }
     void set_peer(imgsink* peer);

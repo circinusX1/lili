@@ -11,6 +11,7 @@ public:
     jpeghttpcam(const dims_t& wh, const std::string& name, const std::string& loc, const Cbdler::Node& n);
     virtual ~jpeghttpcam();
     virtual size_t get_frame(imglayout_t& i);
+    virtual void let_frame(){};
     virtual bool spin();
     virtual bool init(const dims_t&);
     virtual void thread_main();

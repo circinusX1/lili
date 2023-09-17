@@ -13,6 +13,7 @@ public:
             const std::string& loc, const Cbdler::Node& n);
     virtual ~localcam();
     virtual size_t get_frame(imglayout_t& i);
+    virtual void let_frame();
     virtual bool spin();
     virtual bool init(const dims_t&);
 

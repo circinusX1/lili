@@ -11,6 +11,7 @@ public:
     httpcam(const std::string& name, const std::string& loc, const Cbdler::Node& n);
     virtual ~httpcam();
     virtual size_t get_frame(const uint8_t** pb, EIMG_FMT& fmt, event_t& event);
+    virtual void let_frame(){};
     virtual bool spin(event_t& event);
     virtual bool init(const dims_t&);
     virtual void thread_main();

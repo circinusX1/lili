@@ -375,11 +375,20 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
     _curts  = buf.timestamp;
     sz = _buffers[_curbuffer].length;
 
-    if (-1 == _ioctl(VIDIOC_QBUF, &buf))
-    {
-        sz = 0;
-        return 0;
-    }
+ //   if (-1 == _ioctl(VIDIOC_QBUF, &buf))
+ //   {
+ //       sz = 0;
+ //       return 0;
+ //   }
     return (const uint8_t*)_buffers[_curbuffer].start;
 }
+
+void v4ldevice::unread()
+{
+    struct v4l2_buffer buf; // = {0};
+    buf.type =  V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = _buffers[_curbuffer].mmap;
+    _ioctl(VIDIOC_QBUF, &buf);
+}
+
 
