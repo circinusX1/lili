@@ -385,7 +385,7 @@ const uint8_t* v4ldevice::read(int& w, int& h, int& sz, bool& fatal)
     sz = _buffers[user].length;
     if(sz)
     {
-      std::cout << "cur=" << _curbuffer << " vs " << user << "\n";
+//      std::cout << "cur=" << _curbuffer << " vs " << user << "\n";
       return (const uint8_t*)_buffers[user].start;
     }
     return 0;
