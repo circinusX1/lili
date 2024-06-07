@@ -1,0 +1,92 @@
+    ####################################################################################################
+    # Config file: chars to escape with \ in a string are ': = " @'
+    # only if /usr/lib/x86_64-linux-gnu/lib_av.so  is provided.
+    # img_format  DEFAULT    0  JPG
+    # Using CBDL parser
+    ######################################################## experimental###############################
+    {
+        ################################################################################################
+        image{                                  # image settings
+            img_size         {640,480}          # initial config for all cameras
+            bw_image         {0}                # convert all to JPG B&W
+            jpg_quality      {80}               #  80% quality
+            img_format       {0}                # Not used
+            lib_av           {/usr/lib/x86_64-linux-gnu/libav}   # If you use a RTSP cam
+        }
+
+        # local server port
+        server{
+            port             {9000}              # local server, 0 to disable
+        }
+
+        # where to webcast to liveimg_srv
+        webcast{
+            server           {"http\://geta.dynadns.me\:8084/"}      # would stream to liveimage_srv
+            security         {**************                    # match the server same key
+            cast_fps         {5}                                # streaming at this rate
+            pool_intl        {10}                               # pools server to start streaming if anyone request a view
+            insync           {0}                                # server send/confirm hanshake (BUGGY, do not USE)
+            cache            {/tmp/lili/,10,500}                # cache until reach the server, max to cache, cache interval imgs ms
+        }
+
+        ######################################################################################
+            # movement settings
+        move{
+            motion           {150,3000}         # motion range pixels change, motion if px chnage frmo frame to frame in within
+            pix_noise        {20}               # pixel color change % above this noise is a motion event
+            noise_div        {6}                # round down pixel color to multiple of noise_div to eliminate noise
+            img_scale        {4}                # scale for motion rect from img_size (2,4,8,16) keep it 4, divide imgs size with
+            dark_limit       {37}               # lit pixels under 36/frame disable motion, is dark
+            innertia         {5,100}            # capture after motion 5 frames at 100 ms interval
+            time_lapse       {0}                # time lapse capture ms. 0 disabled
+            on_max_files     {8912,make_mov.sh} # if save @ camera/on_event is set roll up at this image index
+            max_movie        {1000}             # Create an new mpeg movie if camera uses mpgeg encoder TODO
+            #save_loc         {/data/snaps/}    # create this folder if save @ camera/on_event is set
+        }
+        ################################################################################################
+        cameras{                                                # cameras on the system
+            {
+                name         {garrage}                         # name of the cam
+                device       {/dev/video*}                     # local
+                on_event     {webcast,record,no_save}          # what to do on events, webcast and remote record, and local save
+                format       {image/jpg}                       # TODO
+                fps          {15}                              # local cam fps
+                move         {@/move}                          # use '@/move' section settings (@<root>entry) is a reference to
+            }
+
+            digo-snap
+            {
+                #name         {digoodgmiq}
+                imgsz         {320,176}
+                url           {"http\://192.168.1.106\:8001/snapshot"}
+                format        {image/jpg}
+                on_event      {webcast,record,no_local_save}
+                fps           {1}
+                move          {@/move}
+            }
+
+           digoo-rtsp
+           {
+                #name            {rtspdigoo}                    # same digo remote cam on rtsp, but does not work
+                #rtsp://admin:dg20160404@192.168.1.106:554/onvif0
+                url             {"rtsp\://192.168.1.106\:554/onvif0"}
+                login           {BASIC,admin\:dg20160404}
+                on_event        {webcast,record,no_save}            # start streaming to server and to record on events
+                fps             {10}
+                format          {422}
+                #pipe           {/tmp/movie2.mov}
+                move            {@/move}
+           }
+
+           rpi-rtsp
+           {
+                #name            {rpirpi}                        # a R-PI rtsp camera for tsting. experimental.
+                format          {422}
+                url             {"rtsp\://192.168.1.13\:8554/unicast"} # the rtsp strea, link
+                on_event        {webcast,record,~force,~save}     #  force->save no mater of events
+                fps             {10}
+                move            {@/move}
+           }
+
+        }
+    }

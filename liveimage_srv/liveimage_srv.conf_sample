@@ -1,0 +1,10 @@
+{
+    verbose     {DIWO}
+    security    {111111111111}
+    camport     {8084}
+    cliport     {8085}
+    records     {/var/www/html/liveimage/pipes/VCT/}
+    password    {password}                                  # http://IP/?password
+    cameras     {digoodgmiq,camerapi,frontcam,backyard,basement,garrage}
+    on_maxseq   {2000,./mk_mov.sh}
+}

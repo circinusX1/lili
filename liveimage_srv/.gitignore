@@ -1,0 +1,8 @@
+*.o
+*.user
+*.stash
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+

@@ -1,0 +1,16 @@
+.git/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+liveimage
+filename.jpg
+build/*
+*.o
+*.a
+build-qt*/*
+*.conf
+*.konf
+./liveimage_srv/liveimage_srv.conf
+./liveimage.konf
+./build-*
