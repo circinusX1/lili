@@ -1,3 +1,4 @@
+[Buy me a coffee](https://www.paypal.com/ncp/payment/UY6RJK9AQ6HVC)
 ## LIGHTWEIGHT CAMERA MOTION DETECTION (Linux)
 ## SUITABLE FOR R-PI, NANO-Pi-NEO
 ## TIME LAPSE AND MOTION CAM 
